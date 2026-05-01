@@ -151,7 +151,7 @@ const openPlayground = async (item: PlaylistItem) => {
             )}
             {/* TEXT */}
             <View className="flex-1">
-              <Text numberOfLines={1} className="text-white font-semibold">
+              <Text numberOfLines={1} className="text-gray-900 dark:text-white font-semibold">
                 {plugin?.pluginName || "Plugin"}
               </Text>
               <Text className="text-gray-400 text-xs">

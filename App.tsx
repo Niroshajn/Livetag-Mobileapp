@@ -89,7 +89,7 @@ export default function App() {
     );
   }
   return (
-    <SafeAreaProvider style={{ flex: 1 }}>
+    <SafeAreaProvider >
     <ThemeProvider>
     <PlaylistCountProvider>
    <UserProvider setIsLoggedIn={setIsLoggedIn}>

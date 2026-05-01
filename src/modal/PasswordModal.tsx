@@ -4,17 +4,22 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
+  Pressable,
 } from "react-native";
 import { X } from "lucide-react-native";
+import { EyeOff } from "lucide-react-native";
+import { Eye } from "lucide-react-native";
 
 interface Props {
   onCancel: () => void;
+  onSave: (currentPassword: string, newPassword: string) => void;
 }
 
-export default function PasswordModal({ onCancel }: Props) {
+export default function PasswordModal({ onSave, onCancel }: Props) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-
+  const [showCurrentPass, setShowCurrentPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
   return (
     <View className="bg-white dark:bg-[#1a1a1a] rounded-xl overflow-hidden">
 
@@ -35,22 +40,52 @@ export default function PasswordModal({ onCancel }: Props) {
         <Text className="text-sm text-gray-500 mb-1">
           Current Password
         </Text>
-        <TextInput
-          secureTextEntry
-          value={currentPassword}
-          onChangeText={setCurrentPassword}
-          className="border border-gray-200 dark:border-gray-700 px-3 py-3 rounded-lg mb-3"
-        />
+        <View className="relative mb-3">
+          <TextInput
+            placeholder="Enter current password"
+            placeholderTextColor="#9CA3AF"
+            secureTextEntry={!showCurrentPass}
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+            className="border border-gray-200 dark:border-gray-700 px-3 py-3 rounded-lg pr-10"
+          />
+
+          <Pressable
+            onPress={() => setShowCurrentPass(!showCurrentPass)}
+            className="absolute right-3 top-3"
+          >
+            {showCurrentPass ? (
+              <EyeOff size={18} color="#9CA3AF" />
+            ) : (
+              <Eye size={18} color="#9CA3AF" />
+            )}
+          </Pressable>
+        </View>
 
         <Text className="text-sm text-gray-500 mb-1">
           New Password
         </Text>
-        <TextInput
-          secureTextEntry
-          value={newPassword}
-          onChangeText={setNewPassword}
-          className="border border-gray-200 dark:border-gray-700 px-3 py-3 rounded-lg"
-        />
+        <View className="relative">
+          <TextInput
+            placeholder="Enter new password"
+            placeholderTextColor="#9CA3AF"
+            secureTextEntry={!showNewPass}
+            value={newPassword}
+            onChangeText={setNewPassword}
+            className="border border-gray-200 dark:border-gray-700 px-3 py-3 rounded-lg pr-10"
+          />
+
+          <Pressable
+            onPress={() => setShowNewPass(!showNewPass)}
+            className="absolute right-3 top-3"
+          >
+            {showNewPass ? (
+              <EyeOff size={18} color="#9CA3AF" />
+            ) : (
+              <Eye size={18} color="#9CA3AF" />
+            )}
+          </Pressable>
+        </View>
       </View>
 
       {/* FOOTER */}
@@ -65,7 +100,7 @@ export default function PasswordModal({ onCancel }: Props) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={onCancel}
+          onPress={() => onSave(currentPassword, newPassword)}
           className="flex-1 bg-blue-600 py-3 rounded-lg"
         >
           <Text className="text-white text-center">

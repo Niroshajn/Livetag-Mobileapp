@@ -34,7 +34,6 @@ export default function EmailVerificationFailed() {
             Try Again
           </Text>
         </TouchableOpacity>
-
       </View>
     </View>
   );

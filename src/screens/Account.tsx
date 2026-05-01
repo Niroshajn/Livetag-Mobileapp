@@ -7,6 +7,7 @@ import {
   ScrollView,
   TextInput,
   Modal,
+  Alert,
 } from "react-native";
 import {
   User,
@@ -28,6 +29,7 @@ import EditProfileModal from "../modal/EditProfileModal";
 import PasswordModal from "../modal/PasswordModal";
 import AppLayout from "./Layout";
 import { useTheme } from "../context/ThemeContext";
+import { useColorScheme } from "nativewind";
 
 type ProfileData = {
   name: string;
@@ -35,7 +37,8 @@ type ProfileData = {
 };
 
 export default function AccountScreen() {
- const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
+  const { colorScheme } = useColorScheme();
   const [user, setUser] = useState({
     name: "",
     email: "", profilePic: "",
@@ -93,7 +96,7 @@ export default function AccountScreen() {
                       className="w-full h-full"
                     />
                   ) : (
-                    <User size={40} color="gray" />
+                    <User size={40} color={colorScheme === "dark" ? "white" : "black"} />
                   )}
                 </View>
               </View>
@@ -149,7 +152,7 @@ export default function AccountScreen() {
                   {user.name}
                 </Text>
               </View>
-              <ChevronRight color="gray" />
+              <ChevronRight color={colorScheme === "dark" ? "white" : "black"} />
             </View>
 
             <View className="px-5 py-4 flex-row justify-between items-center">
@@ -189,7 +192,7 @@ export default function AccountScreen() {
                 Password
               </Text>
             </View>
-            <ChevronRight color="gray" />
+            <ChevronRight color={colorScheme === "dark" ? "white" : "black"} />
           </TouchableOpacity>
 
           <View className="px-5 py-4 flex-row justify-between items-center">
@@ -223,7 +226,7 @@ export default function AccountScreen() {
             </View>
 
             <TouchableOpacity
-             onPress={toggleTheme}
+              onPress={toggleTheme}
               className={`w-12 h-6 rounded-full ${theme === "dark" ? "bg-blue-600" : "bg-gray-300"
                 }`}
             >
@@ -272,7 +275,9 @@ export default function AccountScreen() {
                     ...prev,
                     name: updatedUser.name,
                     email: updatedUser.email,
-                    profilePic: updatedUser.profilePic,
+                    profilePic: updatedUser.profilePic
+                      ? `${updatedUser.profilePic}?t=${Date.now()}`
+                      : "",
                   }));
 
                   setEditModal(false); // close modal after save
@@ -288,7 +293,32 @@ export default function AccountScreen() {
         {/* PASSWORD MODAL */}
         <Modal visible={passwordModal} transparent animationType="fade">
           <View className="flex-1 justify-center bg-black/50 p-4">
-            <PasswordModal onCancel={() => setPasswordModal(false)} />
+            <PasswordModal
+              onCancel={() => setPasswordModal(false)}
+              onSave={async (currentPassword, newPassword) => {
+                if (!currentPassword || !newPassword) {
+                  Alert.alert("Fill all fields");
+                  return;
+                }
+
+                if (newPassword.length < 8) {
+                  Alert.alert("Min 8 characters");
+                  return;
+                }
+
+                try {
+                  await api.post("/auth/change-password", {
+                    oldPassword: currentPassword,
+                    newPassword,
+                  });
+
+                  Alert.alert("Password changed");
+                  setPasswordModal(false);
+                } catch (err: any) {
+                  Alert.alert(err?.response?.data?.message || "Error");
+                }
+              }}
+            />
           </View>
         </Modal>
       </ScrollView>

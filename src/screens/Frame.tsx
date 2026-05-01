@@ -15,7 +15,6 @@ import AddDeviceModal from "../modal/AddFramemodal";
 import DeviceSettingsModal from "../modal/DeviceSettingsModal";
 import DeleteModal from "../modal/DeleteModal";
 import { Frame } from "../types/Frame";
-
 function isDeviceOnline(updatedAt?: string) {
   if (!updatedAt) return false;
   return Date.now() - new Date(updatedAt).getTime() < 86400000;
@@ -31,18 +30,15 @@ function timeAgo(date?: string) {
 }
 
 export default function FramesScreen({ navigation }: any) {
-  const { colorScheme } = useColorScheme();
-
   const [frames, setFrames] = useState<Frame[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
 
   const [selectedDevice, setSelectedDevice] = useState<Frame | null>(null);
   const [openModal, setOpenModal] = useState(false);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-
+  const { colorScheme } = useColorScheme();
   const fetchFrames = async () => {
     try {
       const res = await api.get("/frames");
@@ -95,7 +91,7 @@ export default function FramesScreen({ navigation }: any) {
         {item.previewImageUrl ? (
           <Image source={{ uri: item.previewImageUrl }} className="w-full h-full" />
         ) : (
-          <Monitor size={40} color="gray" />
+          <Monitor size={40} color={colorScheme === "dark" ? "white" : "black"} />
         )}
       </View>
 
@@ -118,7 +114,7 @@ export default function FramesScreen({ navigation }: any) {
                 setShowDeleteModal(true);
               }}
             >
-              <Trash2 size={16} />
+              <Trash2 size={16} color={colorScheme === "dark" ? "white" : "black"} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -127,7 +123,7 @@ export default function FramesScreen({ navigation }: any) {
                 setSelectedDevice(item);
               }}
             >
-              <Settings size={16} />
+              <Settings size={16} color={colorScheme === "dark" ? "white" : "black"}/>
             </TouchableOpacity>
           </View>
         </View>

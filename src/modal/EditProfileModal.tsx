@@ -21,81 +21,81 @@ export default function EditProfileModal({ user, onCancel, onSave }: any) {
   const [deleted, setDeleted] = useState(false);
 
   /* ================= PICK IMAGE ================= */
-const pickImage = async () => {
-  console.log("📸 Image picker opened");
+  const pickImage = async () => {
+    console.log("📸 Image picker opened");
 
-  const result = await launchImageLibrary({
-    mediaType: "photo",
-    quality: 0.8,
-  });
-
-  console.log("📦 Picker result:", result);
-
-  if (result.didCancel) {
-    console.log("❌ User cancelled image picker");
-    return;
-  }
-
-  const asset = result.assets?.[0];
-
-  console.log("🖼️ Selected asset:", asset);
-
-  if (!asset?.uri) {
-    console.log("❌ No URI found in asset");
-    return;
-  }
-
-  try {
-    setLoading(true);
-
-    console.log("🚀 Starting upload...");
-    console.log("📁 URI:", asset.uri);
-    console.log("📄 TYPE:", asset.type);
-    console.log("📛 FILE NAME:", asset.fileName);
-
-    // 1️⃣ Preview first
-    setImage(asset.uri);
-
-    // 2️⃣ Upload
-    const uploadedUrl = await uploadToS3(
-      asset.uri,
-      UploadType.PROFILE_AVATAR
-    );
-
-    console.log("✅ Upload success URL:", uploadedUrl);
-
-    // 3️⃣ Set final image
-    setImage(uploadedUrl);
-
-    Alert.alert("Success", "Image uploaded successfully");
-  } catch (err) {
-    console.log("🚨 UPLOAD ERROR FULL:", err);
-    Alert.alert("Error", "Image upload failed");
-  } finally {
-    console.log("🏁 Upload finished");
-    setLoading(false);
-  }
-};
-  /* ================= SAVE ================= */
- const handleSave = async () => {
-  try {
-    setLoading(true);
-
-    // ❌ REMOVE API CALL FROM HERE
-
-    onSave?.({
-      name,
-      profilePic: deleted ? "" : image,
+    const result = await launchImageLibrary({
+      mediaType: "photo",
+      quality: 0.8,
     });
 
-    onCancel();
-  } catch (err) {
-    console.log(err);
-    Alert.alert("Error", "Failed to update profile");
-  } finally {
-    setLoading(false);
-  }
-};
+    console.log("📦 Picker result:", result);
+
+    if (result.didCancel) {
+      console.log("❌ User cancelled image picker");
+      return;
+    }
+
+    const asset = result.assets?.[0];
+
+    console.log("🖼️ Selected asset:", asset);
+
+    if (!asset?.uri) {
+      console.log("❌ No URI found in asset");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      console.log("🚀 Starting upload...");
+      console.log("📁 URI:", asset.uri);
+      console.log("📄 TYPE:", asset.type);
+      console.log("📛 FILE NAME:", asset.fileName);
+
+      // 1️⃣ Preview first
+      setImage(asset.uri);
+
+      // 2️⃣ Upload
+      const uploadedUrl = await uploadToS3(
+        asset.uri,
+        UploadType.PROFILE_AVATAR
+      );
+
+      console.log("✅ Upload success URL:", uploadedUrl);
+
+      // 3️⃣ Set final image
+      setImage(`${uploadedUrl}?t=${Date.now()}`);
+
+      Alert.alert("Success", "Image uploaded successfully");
+    } catch (err) {
+      console.log("🚨 UPLOAD ERROR FULL:", err);
+      Alert.alert("Error", "Image upload failed");
+    } finally {
+      console.log("🏁 Upload finished");
+      setLoading(false);
+    }
+  };
+  /* ================= SAVE ================= */
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+
+      // ❌ REMOVE API CALL FROM HERE
+
+      onSave?.({
+        name,
+        profilePic: deleted ? "" : image,
+      });
+
+      onCancel();
+    } catch (err) {
+      console.log(err);
+      Alert.alert("Error", "Failed to update profile");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   /* ================= UI ================= */
   return (
@@ -119,7 +119,11 @@ const pickImage = async () => {
           <View className="relative">
             <View className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 overflow-hidden items-center justify-center">
               {image ? (
-                <Image source={{ uri: image }} className="w-full h-full" />
+                <Image
+                  source={{ uri: image }}
+                  key={image} // 🔥 forces re-render
+                  className="w-full h-full"
+                />
               ) : (
                 <User size={36} color="gray" />
               )}

@@ -10,7 +10,7 @@ import { ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react-native";
 import api from "../lib/api";
 import { launchImageLibrary } from "react-native-image-picker";
 import { Image } from "react-native";
-
+import { colorScheme, useColorScheme } from "nativewind";
 export type ConnectorMode = "config" | "design" | "playground";
 
 export type PluginInstance = {
@@ -60,7 +60,7 @@ function ConfigForm({
         if (isImage && mode !== "design") {
           return (
             <View key={key} className="mb-4">
-              <Text className="text-xs text-gray-400 dark:text-gray-500 mb-2">
+              <Text className="text-xs text-gray-900 dark:text-gray-400 mb-2">
                 {field.label}
               </Text>
 
@@ -86,9 +86,9 @@ function ConfigForm({
                     }
                   );
                 }}
-                className="bg-gray-200 dark:bg-gray-700  px-3 py-2 rounded mt-2"
+                className="bg-gray-400 dark:bg-gray-700 px-3 py-2 rounded mt-2"
               >
-                <Text className="text-gray-900 dark:text-white text-xs text-center">
+                <Text className="text-white text-xs">
                   Choose Image
                 </Text>
               </TouchableOpacity>
@@ -146,7 +146,7 @@ function ConfigForm({
                   }}
                   className="bg-blue-600 px-3 py-2 rounded mt-2"
                 >
-                  <Text className="text-white text-xs text-center">
+                  <Text className="text-white text-xs">
                     {uploading ? "Uploading..." : "Upload"}
                   </Text>
                 </TouchableOpacity>
@@ -175,9 +175,9 @@ function ConfigForm({
                       setUploading(false);
                     }
                   }}
-                  className=" bg-gray-400 dark:bg-gray-600 px-3 py-2 rounded mt-2"
+                  className="bg-gray-300 dark:bg-gray-600 px-3 py-2 rounded mt-2"
                 >
-                  <Text className="text-gray-900 dark:text-white text-xs text-center">
+                  <Text className="text-gray-900 dark:text-white text-xs">
                     Delete
                   </Text>
                 </TouchableOpacity>
@@ -189,7 +189,7 @@ function ConfigForm({
         }        /* ================= TEXT ================= */
         return (
           <View key={key} className="mb-3">
-            <Text className="text-xs text-gray-400 dark:text-gray-500 mb-1">
+            <Text className="text-xs text-gray-400 dark:text-gray-500 mb-1 p-2">
               {field.label}
             </Text>
 
@@ -210,7 +210,7 @@ function ConfigForm({
                   { config: updatedConfig }
                 );
               }}
-              className="border border-gray-600 rounded px-3 py-2 text-white"
+              className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white "
             />
           </View>
         );
@@ -248,9 +248,9 @@ export function ConnectorCard({
 
   const isOpen = openInstanceId === instance.id;
   const isConnected = !!instance.oauthTokenId;
-
+  const { colorScheme } = useColorScheme();
   return (
-    <View className="border border-gray-400 dark:border-gray-600 rounded-lg bg-white dark:bg-[#1C1C1E] mb-3">
+    <View className="border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-[#1a1a1a] mb-3">
       <TouchableOpacity
         onPress={() =>
           setOpenInstanceId?.(isOpen ? null : instance.id)
@@ -261,20 +261,25 @@ export function ConnectorCard({
           <Text className="text-blue-400 text-sm">
             {"{{ " + instance.instanceKey + " }}"}
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs">
+          <Text className="text-gray-500 dark:text-gray-400 text-xs p-2">
             {connector?.schema?.label}
           </Text>
         </View>
-
         {isOpen ? (
-          <ChevronUp size={18} color="white" />
+          <ChevronUp
+            size={18}
+            color={colorScheme === "dark" ? "white" : "black"}
+          />
         ) : (
-          <ChevronDown size={18} color="white" />
+          <ChevronDown
+            size={18}
+            color={colorScheme === "dark" ? "white" : "black"}
+          />
         )}
       </TouchableOpacity>
 
       {isOpen && (
-        <View className="px-4 pb-4 border-t border-gray-400 dark:border-gray-600">
+        <View className="px-4 pb-4  border-t border-gray-300 dark:border-gray-600">
           {/* OAuth */}
           {connector?.schema?.oauth && (
             <View className="mt-3 mb-4">
@@ -301,7 +306,7 @@ export function ConnectorCard({
                   }
                   className="bg-blue-600 py-2 rounded"
                 >
-                  <Text className="text-gray-100 dark:text-white text-xs text-center">
+                  <Text className="text-gray-900 dark:text-white text-xs text-center">
                     Connect {connector.schema.oauth.provider}
                   </Text>
                 </TouchableOpacity>

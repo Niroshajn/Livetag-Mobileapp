@@ -12,7 +12,7 @@ import {
 import { Puzzle, ChevronDown } from "lucide-react-native";
 import api from "../lib/api";
 import AppLayout from "./Layout";
-
+import {useColorScheme} from "nativewind";
 interface Tag {
   id: string;
   name: string;
@@ -39,7 +39,7 @@ export default function Apps({ navigation }: any) {
 
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showTagDropdown, setShowTagDropdown] = useState(false);
-
+  const { colorScheme } = useColorScheme();
   // 🔥 FETCH
   const fetchPlugins = async () => {
     try {
@@ -148,7 +148,7 @@ export default function Apps({ navigation }: any) {
           />
         ) : (
           <View className="flex-1 items-center justify-center">
-            <Puzzle size={40} color="gray" />
+            <Puzzle size={40} ccolor={colorScheme === "dark" ? "white" : "black"}/>
           </View>
         )}
       </View>
@@ -204,7 +204,7 @@ export default function Apps({ navigation }: any) {
             <Text className="text-black dark:text-white text-sm">
               Filter Tags
             </Text>
-            <ChevronDown size={16} color="gray" />
+            <ChevronDown size={16} color={colorScheme === "dark" ? "white" : "black"} />
           </TouchableOpacity>
 
           {showTagDropdown && (
@@ -250,7 +250,7 @@ export default function Apps({ navigation }: any) {
         {/* 🔹 LIST */}
         {filteredPlugins.length === 0 ? (
           <View className="flex-1 items-center justify-center">
-            <Puzzle size={50} color="gray" />
+            <Puzzle size={50} color={colorScheme === "dark" ? "white" : "black"} />
             <Text className="text-gray-500 mt-2">
               No apps found
             </Text>

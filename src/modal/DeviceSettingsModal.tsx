@@ -9,10 +9,14 @@ import {
     ScrollView,
     ActivityIndicator,
 } from "react-native";
-import { X, Globe, Moon, Power , ChevronDown, 
-    ChevronUp,} from "lucide-react-native";
+import {
+    X, Globe, Moon, Power, ChevronDown,
+    ChevronUp,
+} from "lucide-react-native";
 import api from "../lib/api";
 import { Frame } from "../types/Frame";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Clock } from "lucide-react-native";
 
 type Props = {
     visible: boolean;
@@ -39,6 +43,8 @@ export default function DeviceSettingsModal({
     const [loading, setLoading] = useState(false);
     const [timezones, setTimezones] = useState<Timezone[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
+    const [showSleepStartPicker, setShowSleepStartPicker] = useState(false);
+    const [showSleepEndPicker, setShowSleepEndPicker] = useState(false);
     useEffect(() => {
         if (!device) return;
 
@@ -68,6 +74,26 @@ export default function DeviceSettingsModal({
 
         loadTimezones();
     }, [visible]);
+
+    const onSleepStartChange = (event: any, selectedDate?: Date) => {
+        setShowSleepStartPicker(false);
+
+        if (selectedDate) {
+            const hours = selectedDate.getHours().toString().padStart(2, "0");
+            const minutes = selectedDate.getMinutes().toString().padStart(2, "0");
+            setSleepStart(`${hours}:${minutes}`);
+        }
+    };
+
+    const onSleepEndChange = (event: any, selectedDate?: Date) => {
+        setShowSleepEndPicker(false);
+
+        if (selectedDate) {
+            const hours = selectedDate.getHours().toString().padStart(2, "0");
+            const minutes = selectedDate.getMinutes().toString().padStart(2, "0");
+            setSleepEnd(`${hours}:${minutes}`);
+        }
+    };
 
     const handleSave = async () => {
         if (!device) return;
@@ -179,8 +205,8 @@ export default function DeviceSettingsModal({
                                             >
                                                 <Text
                                                     className={`${timezone === tz.value
-                                                            ? "text-white"
-                                                            : "text-black dark:text-white"
+                                                        ? "text-white"
+                                                        : "text-black dark:text-white"
                                                         }`}
                                                 >
                                                     {tz.label} {/* ✅ show label */}
@@ -194,6 +220,7 @@ export default function DeviceSettingsModal({
                         </View>
 
                         {/* SLEEP */}
+                        {/* SLEEP */}
                         <View className="mb-5">
                             <View className="flex-row items-center gap-2 mb-2">
                                 <Moon size={16} color="gray" />
@@ -201,18 +228,32 @@ export default function DeviceSettingsModal({
                             </View>
 
                             <View className="flex-row gap-3">
-                                <TextInput
-                                    value={sleepStart}
-                                    onChangeText={setSleepStart}
-                                    placeholder="Start (HH:MM)"
-                                    className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-black dark:text-white"
-                                />
-                                <TextInput
-                                    value={sleepEnd}
-                                    onChangeText={setSleepEnd}
-                                    placeholder="End (HH:MM)"
-                                    className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-black dark:text-white"
-                                />
+
+                                {/* START */}
+                                {/* START */}
+                                <TouchableOpacity
+                                    onPress={() => setShowSleepStartPicker(true)}
+                                    className="flex-1 border border-gray-300 rounded-xl px-4 py-3 flex-row items-center justify-between"
+                                >
+                                    <Text className="text-black dark:text-white">
+                                        {sleepStart || "Start"}
+                                    </Text>
+
+                                    <Clock size={16} color="gray" />
+                                </TouchableOpacity>
+
+                                {/* END */}
+                                <TouchableOpacity
+                                    onPress={() => setShowSleepEndPicker(true)}
+                                    className="flex-1 border border-gray-300 rounded-xl px-4 py-3 flex-row items-center justify-between"
+                                >
+                                    <Text className="text-black dark:text-white">
+                                        {sleepEnd || "End"}
+                                    </Text>
+
+                                    <Clock size={16} color="gray" />
+                                </TouchableOpacity>
+
                             </View>
                         </View>
 
@@ -245,6 +286,25 @@ export default function DeviceSettingsModal({
 
                 </View>
             </View>
+            {showSleepStartPicker && (
+                <DateTimePicker
+                    value={new Date()}
+                    mode="time"
+                    is24Hour={true}
+                    display="spinner"
+                    onChange={onSleepStartChange}
+                />
+            )}
+
+            {showSleepEndPicker && (
+                <DateTimePicker
+                    value={new Date()}
+                    mode="time"
+                    is24Hour={true}
+                    display="spinner"
+                    onChange={onSleepEndChange}
+                />
+            )}
         </Modal>
     );
 }
