@@ -284,15 +284,17 @@ export function ConnectorCard({
           {connector?.schema?.oauth && (
             <View className="mt-3 mb-4">
               {isConnected ? (
-                <View className="flex-row justify-between items-center bg-green-900 px-3 py-2 rounded">
-                  <Text className="text-green-400 text-xs">
+                <View className="flex-row justify-between items-center bg-green-900 px-3 py-6 rounded">
+                  <Text className="text-green-400 text-sm">
                     Connected
                   </Text>
                   <TouchableOpacity
                     onPress={() => onDisconnect?.(instance.id)}
                   >
+                    <Text className="bg-gray-300 dark:bg-gray-600 px-3 py-2 rounded text-gray-900 dark:text-white text-xs">
                     <Text className="text-gray-900 dark:text-white text-xs">
                       Logout
+                    </Text>
                     </Text>
                   </TouchableOpacity>
                 </View>

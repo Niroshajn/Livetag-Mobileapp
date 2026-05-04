@@ -14,6 +14,7 @@ import { Linking } from "react-native";
 // ✅ ONLY REQUIRED MODALS
 import SelectFrameModal from "../modal/SelectFrameModal";
 import PlaylistItemModal from "../modal/PlaylistItemModal";
+import { useNavigation } from "@react-navigation/native";
 
 type Connector = {
   type: string;
@@ -44,7 +45,7 @@ export default function PreviewPage({
 
   // ✅ STORE FRAME ID
   const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
-
+  const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const sub = Linking.addEventListener("url", async ({ url }) => {
@@ -113,27 +114,27 @@ export default function PreviewPage({
   const handleAddToPlaylist = () => {
     setShowFrameModal(true);
   };
-const handleDisconnect = async (id: string) => {
-  try {
-    // ✅ update correct state
-    setInstances((prev) =>
-      prev.map((i) =>
-        i.id === id ? { ...i, oauthTokenId: null } : i
-      )
-    );
+  const handleDisconnect = async (id: string) => {
+    try {
+      // ✅ update correct state
+      setInstances((prev) =>
+        prev.map((i) =>
+          i.id === id ? { ...i, oauthTokenId: null } : i
+        )
+      );
 
-    await api.delete(`/playground/connector/${id}/oauth/detach`);
+      await api.delete(`/playground/connector/${id}/oauth/detach`);
 
-    const res = await api.get(
-      `/playground/${sessionId}/connectors`
-    );
+      const res = await api.get(
+        `/playground/${sessionId}/connectors`
+      );
 
-    setInstances(res.data);
+      setInstances(res.data);
 
-  } catch (err) {
-    console.log("Logout failed", err);
-  }
-};
+    } catch (err) {
+      console.log("Logout failed", err);
+    }
+  };
 
   if (loading) {
     return (
@@ -251,7 +252,15 @@ const handleDisconnect = async (id: string) => {
           frameId={selectedFrameId}   // ✅ now always string
           onSaved={() => {
             setShowItemModal(false);
-            Alert.alert("Success", "Added to playlist");
+
+            Alert.alert("Success", "Added to playlist", [
+              {
+                text: "OK",
+                onPress: () => {
+                 navigation.navigate("PlayList", { id: selectedFrameId });
+                },
+              },
+            ]);
           }}
         />
       )}

@@ -192,14 +192,14 @@ export default function Apps({ navigation }: any) {
           placeholder="Search apps..."
           value={searchQuery}
           onChangeText={setSearchQuery}
-          className="bg-gray-200 dark:bg-gray-900 p-3 rounded-lg mb-3 text-black dark:text-white"
+          className="bg-gray-200 dark:bg-gray-500 p-3 rounded-lg mb-3 text-black dark:text-white"
         />
 
         {/* 🔹 FILTER DROPDOWN */}
         <View className="relative mb-3">
           <TouchableOpacity
             onPress={() => setShowTagDropdown(!showTagDropdown)}
-            className="flex-row justify-between items-center px-4 py-2 bg-gray-300 dark:bg-gray-800 rounded-lg"
+            className="flex-row justify-between items-center px-4 py-2 bg-gray-300 dark:bg-gray-500 rounded-lg"
           >
             <Text className="text-black dark:text-white text-sm">
               Filter Tags
@@ -208,7 +208,7 @@ export default function Apps({ navigation }: any) {
           </TouchableOpacity>
 
           {showTagDropdown && (
-            <View className="absolute top-12 w-full bg-white dark:bg-gray-900 border border-gray-300 rounded-lg max-h-60 z-50">
+            <View className="absolute top-12 w-full bg-white dark:bg-gray-100 border border-gray-300 rounded-lg max-h-60 z-50">
               <ScrollView>
                 {allTags.map((tag) => (
                   <TouchableOpacity
@@ -222,7 +222,7 @@ export default function Apps({ navigation }: any) {
                         : "bg-white"
                         }`}
                     />
-                    <Text className="text-black dark:text-white text-sm">
+                    <Text className="text-black dark:text-black text-sm">
                       #{tag}
                     </Text>
                   </TouchableOpacity>
@@ -249,7 +249,7 @@ export default function Apps({ navigation }: any) {
 
         {/* 🔹 LIST */}
         {filteredPlugins.length === 0 ? (
-          <View className="flex-1 items-center justify-center">
+          <View className="flex-1 items-center justify-center p-15">
             <Puzzle size={50} color={colorScheme === "dark" ? "white" : "black"} />
             <Text className="text-gray-500 mt-2">
               No apps found
