@@ -17,7 +17,7 @@ import api from "../lib/api";
 import { Frame } from "../types/Frame";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Clock } from "lucide-react-native";
-
+import { Dimensions } from "react-native";
 type Props = {
     visible: boolean;
     onClose: () => void;
@@ -45,6 +45,8 @@ export default function DeviceSettingsModal({
     const [showDropdown, setShowDropdown] = useState(false);
     const [showSleepStartPicker, setShowSleepStartPicker] = useState(false);
     const [showSleepEndPicker, setShowSleepEndPicker] = useState(false);
+      const { width } = Dimensions.get("window");
+      const iconSize = width * 0.05;
     useEffect(() => {
         if (!device) return;
 
@@ -140,7 +142,7 @@ export default function DeviceSettingsModal({
                             Device Settings
                         </Text>
                         <TouchableOpacity onPress={onClose}>
-                            <X size={20} color="gray" />
+                            <X size={iconSize} color="gray" />
                         </TouchableOpacity>
                     </View>
 
@@ -159,7 +161,7 @@ export default function DeviceSettingsModal({
                         {/* ENABLE SWITCH CARD */}
                         <View className="flex-row justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-xl mb-5">
                             <View className="flex-row items-center gap-3">
-                                <Power size={18} color="gray" />
+                                <Power size={iconSize} color="gray" />
                                 <Text className="text-black dark:text-white">
                                     Device Enabled
                                 </Text>
@@ -223,7 +225,7 @@ export default function DeviceSettingsModal({
                         {/* SLEEP */}
                         <View className="mb-5">
                             <View className="flex-row items-center gap-2 mb-2">
-                                <Moon size={16} color="gray" />
+                                <Moon size={iconSize} color="gray" />
                                 <Text className="text-gray-500">Sleep Schedule</Text>
                             </View>
 
@@ -239,7 +241,7 @@ export default function DeviceSettingsModal({
                                         {sleepStart || "Start"}
                                     </Text>
 
-                                    <Clock size={16} color="gray" />
+                                    <Clock size={iconSize} color="gray" />
                                 </TouchableOpacity>
 
                                 {/* END */}
@@ -251,7 +253,7 @@ export default function DeviceSettingsModal({
                                         {sleepEnd || "End"}
                                     </Text>
 
-                                    <Clock size={16} color="gray" />
+                                    <Clock size={iconSize} color="gray" />
                                 </TouchableOpacity>
 
                             </View>

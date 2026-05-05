@@ -6,7 +6,7 @@ import {
   Modal,
 } from "react-native";
 import { X } from "lucide-react-native";
-
+import { Dimensions } from "react-native";
 type Props = {
   visible: boolean;   // ✅ correct
   onCancel: () => void;
@@ -19,7 +19,8 @@ export default function DeleteModal({
   onConfirm,
 }: Props) {
   if (!visible) return null;
-
+  const { width } = Dimensions.get("window");
+  const iconSize = width * 0.05;
   return (
     <Modal transparent animationType="fade">
       <View className="flex-1 bg-black/60 justify-center px-4">
@@ -31,7 +32,7 @@ export default function DeleteModal({
             onPress={onCancel}
             className="absolute top-4 right-4"
           >
-            <X size={20} className="text-gray-500 dark:text-gray-300" />
+            <X size={iconSize} className="text-gray-500 dark:text-gray-300" />
           </TouchableOpacity>
 
           {/* TITLE */}

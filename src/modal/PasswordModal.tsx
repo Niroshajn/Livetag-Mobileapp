@@ -9,6 +9,7 @@ import {
 import { X } from "lucide-react-native";
 import { EyeOff } from "lucide-react-native";
 import { Eye } from "lucide-react-native";
+import { Dimensions } from "react-native";
 
 interface Props {
   onCancel: () => void;
@@ -20,6 +21,8 @@ export default function PasswordModal({ onSave, onCancel }: Props) {
   const [newPassword, setNewPassword] = useState("");
   const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
+  const { width } = Dimensions.get("window");
+  const iconSize = width * 0.05;
   return (
     <View className="bg-white dark:bg-[#1a1a1a] rounded-xl overflow-hidden">
 
@@ -30,7 +33,7 @@ export default function PasswordModal({ onSave, onCancel }: Props) {
         </Text>
 
         <TouchableOpacity onPress={onCancel}>
-          <X size={20} color="gray" />
+          <X size={iconSize} color="gray" />
         </TouchableOpacity>
       </View>
 
@@ -55,9 +58,9 @@ export default function PasswordModal({ onSave, onCancel }: Props) {
             className="absolute right-3 top-3"
           >
             {showCurrentPass ? (
-              <EyeOff size={18} color="#9CA3AF" />
+              <EyeOff size={iconSize} color="#9CA3AF" />
             ) : (
-              <Eye size={18} color="#9CA3AF" />
+              <Eye size={iconSize} color="#9CA3AF" />
             )}
           </Pressable>
         </View>
@@ -80,9 +83,9 @@ export default function PasswordModal({ onSave, onCancel }: Props) {
             className="absolute right-3 top-3"
           >
             {showNewPass ? (
-              <EyeOff size={18} color="#9CA3AF" />
+              <EyeOff size={iconSize} color="#9CA3AF" />
             ) : (
-              <Eye size={18} color="#9CA3AF" />
+              <Eye size={iconSize} color="#9CA3AF" />
             )}
           </Pressable>
         </View>

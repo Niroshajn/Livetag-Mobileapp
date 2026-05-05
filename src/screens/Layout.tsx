@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, TouchableOpacity } from "react-native";
+import { View, TouchableOpacity, Dimensions } from "react-native";
 import { Menu } from "lucide-react-native";
 import Sidebar from "./Sidebar";
 import { useColorScheme } from "nativewind";
@@ -8,13 +8,15 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 export default function AppLayout({ children }: any) {
   const [open, setOpen] = useState(false);
   const { colorScheme } = useColorScheme();
+    const { width } = Dimensions.get("window");
+    const iconSize = width * 0.05;
   return (
     <View className="flex-1 bg-gray-100 dark:bg-[#1a1a1a] ">
 
       <SafeAreaView edges={["top"]} className="bg-white dark:bg-[#1a1a1a]">
         <View className="px-4 pb-3 flex-row items-center">
           <TouchableOpacity onPress={() => setOpen(true)}>
-            <Menu size={26} color={colorScheme === "dark" ? "white" : "black"} />
+            <Menu size={iconSize} color={colorScheme === "dark" ? "white" : "black"} />
           </TouchableOpacity>
         </View>
       </SafeAreaView>

@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Dimensions,
 } from "react-native";
 import { X } from "lucide-react-native";
 export default function AddPluginModal({
@@ -16,7 +17,8 @@ export default function AddPluginModal({
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [isEnabled, setIsEnabled] = useState(true);
-
+  const { width } = Dimensions.get("window");
+  const iconSize = width * 0.05;
   return (
     <Modal visible={open} transparent animationType="slide">
       <View className="flex-1 bg-black/50 justify-center px-4">
@@ -27,7 +29,7 @@ export default function AddPluginModal({
             <Text className="text-lg font-bold">Create App</Text>
 
             <TouchableOpacity onPress={onClose}>
-              <X size={20} />
+              <X size={iconSize} />
             </TouchableOpacity>
           </View>
 

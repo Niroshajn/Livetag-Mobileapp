@@ -351,15 +351,11 @@ export default function PlayListPreview({
         return;
       }
 
-      // ✅ NORMAL MODE
       if (!playgroundSessionId) return;
-
       console.log("Refreshing NORMAL session...");
-
       const res = await api.get(
         `/playground/${playgroundSessionId}/connectors`
       );
-
       setPlaygroundInstances(res.data);
 
     } catch (err) {
@@ -435,22 +431,11 @@ export default function PlayListPreview({
 
   const handleExecute = async () => {
     if (!playgroundSessionId) return;
-
     await api.get(`/execution/playground/${playgroundSessionId}`);
-    Alert.alert("Executed");
   };
-
   const handleUpdatePlaylist = async () => {
     if (!playlistItemId) return;
-
     await api.post(`/playlist/item/${playlistItemId}/sync-connectors`);
-
-    Alert.alert("Success", "Playlist Updated", [
-      {
-        text: "OK",
-        onPress: () => navigation.goBack(),
-      },
-    ]);
   };
 
   const handleDisconnect = async (id: string) => {
@@ -505,7 +490,6 @@ export default function PlayListPreview({
 
       <View className="flex-1 p-4">
         <Text className="text-xs mb-3">Connectors</Text>
-
         <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
           {playgroundInstances.map((inst) => (
             <ConnectorCard
@@ -518,23 +502,17 @@ export default function PlayListPreview({
               setOpenInstanceId={setOpenInstanceId}
               onConfigChange={updatePlaygroundInstanceConfig}
               onDisconnect={handleDisconnect}
-
-              // 🔥 ADD THIS
               onStartOAuth={async (id, provider) => {
                 try {
                   console.log("Starting OAuth for:", provider);
-
                   const res = await api.post(
                     `/playground/connector/${id}/oauth/connect`,
                     {
                       origin: "myapp://oauth", // 🔥 MUST match backend
                     }
                   );
-
                   console.log("OAuth URL:", res.data.url);
-
                   await Linking.openURL(res.data.url);
-
                 } catch (err) {
                   console.log("OAuth start failed", err);
                 }

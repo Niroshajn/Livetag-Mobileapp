@@ -13,6 +13,7 @@ import {
 } from "lucide-react-native";
 import api from "../lib/api";
 import AppLayout from "./Layout";
+import { Dimensions } from "react-native";
 /* ================= TYPES ================= */
 
 type Device = {
@@ -40,6 +41,8 @@ export default function DashboardScreen() {
   const [user, setUser] = useState({
     name: "",
   });
+  const { width } = Dimensions.get("window");
+  const iconSize = width * 0.05;
   /* ================= HELPERS ================= */
 
   const isOnline = (date?: string) => {
@@ -142,7 +145,7 @@ export default function DashboardScreen() {
                 {devices.length}
               </Text>
             </View>
-            <Monitor color="#9CA3AF" size={18} />
+            <Monitor color="#9CA3AF" size={iconSize} />
           </View>
 
           {/* Online */}
@@ -155,7 +158,7 @@ export default function DashboardScreen() {
                 {online.length}
               </Text>
             </View>
-            <Wifi color="#9CA3AF" size={18} />
+            <Wifi color="#9CA3AF" size={iconSize} />
           </View>
 
           {/* Offline */}

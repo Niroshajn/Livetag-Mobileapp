@@ -17,7 +17,7 @@ import { ToastAndroid } from "react-native";
 import AppButton from "../components/AppButton";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAvoidingView, Platform } from "react-native";
-
+import { Dimensions } from "react-native";
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -44,7 +44,8 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  const { width } = Dimensions.get("window");
+  const iconSize = width * 0.05;
   const handleSignupAPI = async (values: any, setErrors: any) => {
     setLoading(true);
     try {
@@ -179,7 +180,7 @@ return (
                         onPress={() => setShowPass(!showPass)}
                         className="absolute right-3 top-2.5"
                       >
-                        {showPass ? <EyeOff size={18} color="#9CA3AF" /> : <Eye size={18} color="#9CA3AF" />}
+                        {showPass ? <EyeOff size={iconSize} color="#9CA3AF" /> : <Eye size={iconSize} color="#9CA3AF" />}
                       </Pressable>
                     </View>
                   </View>
@@ -201,7 +202,7 @@ return (
                         onPress={() => setShowConfirmPass(!showConfirmPass)}
                         className="absolute right-3 top-2.5"
                       >
-                        {showConfirmPass ? <EyeOff size={18} color="#9CA3AF" /> : <Eye size={18} color="#9CA3AF" />}
+                        {showConfirmPass ? <EyeOff size={iconSize} color="#9CA3AF" /> : <Eye size={iconSize} color="#9CA3AF" />}
                       </Pressable>
                     </View>
                   </View>

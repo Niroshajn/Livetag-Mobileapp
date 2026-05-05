@@ -14,6 +14,7 @@ import apiClient from "../lib/api";
 import { ChevronUp } from "lucide-react-native";
 import { ChevronDown } from "lucide-react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { Dimensions } from "react-native";
 
 interface PlaylistItem {
   id: string;
@@ -61,7 +62,8 @@ export default function PlaylistItemModal({
     { label: "Every 4 Hour", value: 14400 },
     { label: "Once per day", value: 86400 },
   ];
-
+  const { width } = Dimensions.get("window");
+  const iconSize = width * 0.05;
   const selectedLabel =
     refreshOptions.find((i) => i.value === refreshSeconds)?.label;
   useEffect(() => {
@@ -177,7 +179,7 @@ export default function PlaylistItemModal({
             </View>
 
             <TouchableOpacity onPress={onClose}>
-              <X size={20} color="gray" />
+              <X size={iconSize} color="gray" />
             </TouchableOpacity>
           </View>
 
@@ -187,7 +189,7 @@ export default function PlaylistItemModal({
             <View className="mb-4">
               <View className="flex-row items-center mb-2">
 
-                <Clock size={16} color="gray" />
+                <Clock size={iconSize} color="gray" />
 
 
                 <Text className="ml-2 text-gray-700 dark:text-gray-300">
@@ -205,7 +207,7 @@ export default function PlaylistItemModal({
                     {startTime || "Start Time"}
                   </Text>
                   
-                  <Clock size={16} color="gray" />
+                  <Clock size={iconSize} color="gray" />
                 </TouchableOpacity>
 
                 {/* END TIME */}
@@ -217,7 +219,7 @@ export default function PlaylistItemModal({
                   <Text className="text-gray-700 dark:text-gray-300 ml-2 flex-1 justify-between">
                     {endTime || "End Time"}
                   </Text>
-                   <Clock size={16} color="gray" />
+                   <Clock size={iconSize} color="gray" />
                 </TouchableOpacity>
 
               </View>
@@ -238,7 +240,7 @@ export default function PlaylistItemModal({
             {/* <View className="flex-row items-center mb-2"> */}
             <View className="mb-4">
               <View className="flex-row items-center mb-2">
-                <Zap size={16} color="gray" />
+                <Zap size={iconSize} color="gray" />
                 <Text className="ml-2 text-gray-700 dark:text-gray-300">
                   Refresh Interval
                 </Text>
@@ -255,9 +257,9 @@ export default function PlaylistItemModal({
                 </Text>
 
                 {dropdownOpen ? (
-                  <ChevronUp size={18} color="gray" />
+                  <ChevronUp size={iconSize} color="gray" />
                 ) : (
-                  <ChevronDown size={18} color="gray" />
+                  <ChevronDown size={iconSize} color="gray" />
                 )}
               </TouchableOpacity>
 
@@ -301,7 +303,7 @@ export default function PlaylistItemModal({
 
                 {/* ICON BOX */}
                 <View className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-[#333] items-center justify-center">
-                  <ToggleRight size={20} color="#6B7280" />
+                  <ToggleRight size={iconSize} color="#6B7280" />
                 </View>
 
                 {/* TEXT */}

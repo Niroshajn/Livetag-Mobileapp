@@ -13,13 +13,15 @@ import { launchImageLibrary } from "react-native-image-picker";
 import api from "../lib/api";
 import { uploadToS3 } from "../types/uploadtoS3"; // ✅ FIXED
 import { UploadType } from "../types/upload";
+import { Dimensions } from "react-native";
 
 export default function EditProfileModal({ user, onCancel, onSave }: any) {
   const [name, setName] = useState(user.name || "");
   const [image, setImage] = useState<string | null>(user.profilePic || null);
   const [loading, setLoading] = useState(false);
   const [deleted, setDeleted] = useState(false);
-
+  const { width } = Dimensions.get("window");
+  const iconSize = width * 0.05;
   /* ================= PICK IMAGE ================= */
   const pickImage = async () => {
     console.log("📸 Image picker opened");
@@ -107,7 +109,7 @@ export default function EditProfileModal({ user, onCancel, onSave }: any) {
           Edit Profile
         </Text>
         <TouchableOpacity onPress={onCancel}>
-          <X size={20} color="gray" />
+          <X size={iconSize} color="gray" />
         </TouchableOpacity>
       </View>
 
@@ -125,7 +127,7 @@ export default function EditProfileModal({ user, onCancel, onSave }: any) {
                   className="w-full h-full"
                 />
               ) : (
-                <User size={36} color="gray" />
+                <User size={iconSize} color="gray" />
               )}
             </View>
 
@@ -136,7 +138,7 @@ export default function EditProfileModal({ user, onCancel, onSave }: any) {
               {loading ? (
                 <ActivityIndicator color="white" size="small" />
               ) : (
-                <Camera size={14} color="white" />
+                <Camera size={iconSize} color="white" />
               )}
             </TouchableOpacity>
           </View>

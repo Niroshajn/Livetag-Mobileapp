@@ -37,12 +37,11 @@ const LoginScreen: React.FC<Props> = ({ navigation, onLogin }) => {
     setLoading(true);
     try {
       const res = await api.post("/auth/login", values);
-
       if (res.data?.token) {
         await AsyncStorage.setItem("token", res.data.token);
         ToastAndroid.show("Login successful!", ToastAndroid.SHORT);
 
-        onLogin(); // 🔥 IMPORTANT (this updates app state)
+        onLogin(); 
       } else {
         ToastAndroid.show(res.data?.message || "Login failed", ToastAndroid.SHORT);
       }
@@ -55,7 +54,6 @@ const LoginScreen: React.FC<Props> = ({ navigation, onLogin }) => {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100 dark:bg-black">
-
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -65,9 +63,7 @@ const LoginScreen: React.FC<Props> = ({ navigation, onLogin }) => {
           keyboardShouldPersistTaps="handled"
         >
           <View className="flex-1 justify-center items-center px-4">
-
             <View className="w-full max-w-md bg-white dark:bg-[#1a1a1a] p-6 rounded-lg border border-gray-200 dark:border-gray-800">
-
               {/* Header */}
               <View className="flex-row items-center gap-2">
                 <View className="w-5 h-6 items-center justify-center border border-blue-300 bg-gray-100 dark:bg-black">
@@ -78,12 +74,10 @@ const LoginScreen: React.FC<Props> = ({ navigation, onLogin }) => {
                   LIVETAG
                 </Text>
               </View>
-
               {/* LOGIN TAG */}
               <View className="absolute right-0 top-0 bg-gray-300 dark:bg-gray-700 px-3 py-1 rounded-bl">
                 <Text className="text-sm text-gray-800 dark:text-white">LOGIN</Text>
               </View>
-
               {/* Loader */}
               {loading && (
                 <View className="absolute inset-0 z-50 bg-black/60 flex items-center justify-center rounded-lg">
@@ -91,7 +85,6 @@ const LoginScreen: React.FC<Props> = ({ navigation, onLogin }) => {
                   <Text className="text-white mt-2">Logging in...</Text>
                 </View>
               )}
-
               {/* Formik */}
               <Formik
                 initialValues={{ email: "", password: "" }}
@@ -115,11 +108,9 @@ const LoginScreen: React.FC<Props> = ({ navigation, onLogin }) => {
                         <Text className="text-red-500 text-sm mt-1">{errors.email}</Text>
                       )}
                     </View>
-
                     {/* Password */}
                     <View>
                       <Text className="text-sm text-gray-600 dark:text-gray-300 mb-1 mt-4">Password</Text>
-
                       <View className="relative">
                         <TextInput
                           placeholder="Enter password"
@@ -130,7 +121,6 @@ const LoginScreen: React.FC<Props> = ({ navigation, onLogin }) => {
                           onBlur={handleBlur("password")}
                           className="bg-gray-100 dark:bg-[#252525] text-black dark:text-white px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 pr-10"
                         />
-
                         <Pressable
                           onPress={() => setShowPass(!showPass)}
                           className="absolute right-3 top-2.5"
@@ -138,12 +128,10 @@ const LoginScreen: React.FC<Props> = ({ navigation, onLogin }) => {
                           {showPass ? <EyeOff size={18} color="#9CA3AF" /> : <Eye size={18} color="#9CA3AF" />}
                         </Pressable>
                       </View>
-
                       {errors.password && touched.password && (
                         <Text className="text-red-500 text-sm mt-1">{errors.password}</Text>
                       )}
                     </View>
-
                     {/* Buttons */}
                     <View className="flex-col gap-3 mt-6">
                       <AppButton
@@ -152,14 +140,12 @@ const LoginScreen: React.FC<Props> = ({ navigation, onLogin }) => {
                         variant="outline"
                         loading={loading}
                       />
-
                       <AppButton
                         title="Sign Up"
                         onPress={() => navigation.navigate("Signup")}
                         variant="primary"
                       />
                     </View>
-
                     {/* Forgot */}
                     <Text
                       onPress={() => navigation.navigate("ForgotPassword")}
@@ -167,7 +153,6 @@ const LoginScreen: React.FC<Props> = ({ navigation, onLogin }) => {
                     >
                       Forgot Password?
                     </Text>
-
                   </View>
                 )}
               </Formik>
@@ -188,7 +173,6 @@ const LoginScreen: React.FC<Props> = ({ navigation, onLogin }) => {
                   Privacy Policy
                 </Text>
               </View>
-
             </View>
           </View>
         </ScrollView>

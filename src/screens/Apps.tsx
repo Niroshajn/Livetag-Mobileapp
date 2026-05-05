@@ -13,6 +13,7 @@ import { Puzzle, ChevronDown } from "lucide-react-native";
 import api from "../lib/api";
 import AppLayout from "./Layout";
 import {useColorScheme} from "nativewind";
+import { Dimensions } from "react-native";
 interface Tag {
   id: string;
   name: string;
@@ -40,6 +41,8 @@ export default function Apps({ navigation }: any) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const { colorScheme } = useColorScheme();
+    const { width } = Dimensions.get("window");
+    const iconSize = width * 0.05;
   // 🔥 FETCH
   const fetchPlugins = async () => {
     try {
@@ -52,11 +55,9 @@ export default function Apps({ navigation }: any) {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchPlugins();
   }, []);
-
   // 🔹 ALL TAGS
   const allTags = useMemo(() => {
     const tags = new Set<string>();
@@ -65,11 +66,9 @@ export default function Apps({ navigation }: any) {
     });
     return Array.from(tags);
   }, [plugins]);
-
   // 🔹 FILTER + SORT
   const filteredPlugins = useMemo(() => {
     let result = [...plugins];
-
     // SEARCH
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -79,14 +78,12 @@ export default function Apps({ navigation }: any) {
           p.pluginDescription?.toLowerCase().includes(q)
       );
     }
-
     // TAG FILTER
     if (selectedTags.length > 0) {
       result = result.filter((p) =>
         p.hashtags?.some((tag) => selectedTags.includes(tag.name))
       );
     }
-
     // SORT
     switch (sortBy) {
       case "newest":
@@ -148,7 +145,7 @@ export default function Apps({ navigation }: any) {
           />
         ) : (
           <View className="flex-1 items-center justify-center">
-            <Puzzle size={40} ccolor={colorScheme === "dark" ? "white" : "black"}/>
+            <Puzzle size={iconSize} ccolor={colorScheme === "dark" ? "white" : "black"}/>
           </View>
         )}
       </View>
@@ -204,7 +201,7 @@ export default function Apps({ navigation }: any) {
             <Text className="text-black dark:text-white text-sm">
               Filter Tags
             </Text>
-            <ChevronDown size={16} color={colorScheme === "dark" ? "white" : "black"} />
+            <ChevronDown size={iconSize} color={colorScheme === "dark" ? "white" : "black"} />
           </TouchableOpacity>
 
           {showTagDropdown && (
@@ -250,7 +247,7 @@ export default function Apps({ navigation }: any) {
         {/* 🔹 LIST */}
         {filteredPlugins.length === 0 ? (
           <View className="flex-1 items-center justify-center p-15">
-            <Puzzle size={50} color={colorScheme === "dark" ? "white" : "black"} />
+            <Puzzle size={iconSize} color={colorScheme === "dark" ? "white" : "black"} />
             <Text className="text-gray-500 mt-2">
               No apps found
             </Text>

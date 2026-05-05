@@ -1,9 +1,10 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, Dimensions } from "react-native";
 import { Moon, Sun } from "lucide-react-native"; // ✅ FIXED
 import { useTheme } from "../context/ThemeContext";
 export default function ThemeSwitcher() {
   const { theme, toggleTheme } = useTheme();
-
+  const { width } = Dimensions.get("window");
+  const iconSize = width * 0.05;
   return (
     <Pressable
       onPress={toggleTheme}
@@ -11,14 +12,14 @@ export default function ThemeSwitcher() {
     >
       {theme === "dark" ? (
         <>
-          <Sun size={20} color="white" />
+          <Sun size={iconSize} color="white" />
           <Text className="text-black dark:text-white">
             Light Mode
           </Text>
         </>
       ) : (
         <>
-          <Moon size={20} color="black" />
+          <Moon size={iconSize} color="black" />
           <Text className="text-black dark:text-white">
             Dark Mode
           </Text>

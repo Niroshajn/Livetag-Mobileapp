@@ -14,7 +14,7 @@ import {
 } from "lucide-react-native";
 import { useTheme } from "../context/ThemeContext";
 import LogoutModal from "../modal/Logout";
-
+import { Dimensions } from "react-native";
 type Props = {
   closeSidebar: () => void;
 };
@@ -24,7 +24,8 @@ export default function Sidebar({ closeSidebar }: Props) {
   const route = useRoute();
 const [showLogout, setShowLogout] = useState(false);
   const { theme, toggleTheme } = useTheme();
-
+  const { width } = Dimensions.get("window");
+  const iconSize = width * 0.05;
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard, route: "Dashboard" },
     { name: "Devices", icon: Monitor, route: "Frame" },
@@ -46,7 +47,7 @@ const [showLogout, setShowLogout] = useState(false);
         </View>
 
         <TouchableOpacity onPress={closeSidebar}>
-          <X size={22} color={theme === "dark" ? "white" : "black"} />
+          <X size={iconSize} color={theme === "dark" ? "white" : "black"} />
         </TouchableOpacity>
       </View>
 
@@ -67,7 +68,7 @@ const [showLogout, setShowLogout] = useState(false);
                 }`}
             >
               <Icon
-                size={20}
+                size={iconSize}
                color={theme === "dark" ? "white" : "gray"} 
               />
               <Text
@@ -90,7 +91,7 @@ const [showLogout, setShowLogout] = useState(false);
           }}
           className="flex-row items-center gap-3 py-3 px-3 mx-2 rounded-lg"
         >
-          <HelpCircle size={20} color={theme === "dark" ? "white" : "gray"} />
+          <HelpCircle size={iconSize} color={theme === "dark" ? "white" : "gray"} />
           <Text className="text-gray-800 dark:text-gray-100">Help</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -104,9 +105,9 @@ const [showLogout, setShowLogout] = useState(false);
           className="flex-row items-center gap-3 py-3"
         >
           {theme === "dark" ? (
-            <Sun size={20} color="white" />
+            <Sun size={iconSize} color="white" />
           ) : (
-            <Moon size={20} color="gray" />
+            <Moon size={iconSize} color="gray" />
           )}
 
           <Text className="text-gray-800 dark:text-gray-100">
@@ -119,7 +120,7 @@ const [showLogout, setShowLogout] = useState(false);
           onPress={() => setShowLogout(true)}
           className="flex-row items-center gap-3 py-3"
         >
-          <LogOut size={20} color={theme === "dark" ? "white" : "gray"} />
+          <LogOut size={iconSize} color={theme === "dark" ? "white" : "gray"} />
           <Text className="text-gray-800 dark:text-gray-100">
             Logout
           </Text>

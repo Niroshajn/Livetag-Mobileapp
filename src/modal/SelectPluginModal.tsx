@@ -38,6 +38,8 @@ export default function SelectPluginModal({
   const [loading, setLoading] = useState(true);
   const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const iconSize = width * 0.05;
+
 
   useEffect(() => {
     fetchPlugins();
@@ -101,14 +103,14 @@ export default function SelectPluginModal({
               onPress={onClose}
               className="absolute right-0 top-0 p-1"
             >
-              <X size={20} color="#9CA3AF" />
+              <X size={iconSize} color="#9CA3AF" />
             </TouchableOpacity>
           </View>
 
           {/* SEARCH */}
           <View className="relative mb-4">
             <View className="absolute left-3 top-3 z-10">
-              <Search size={16} color="#9CA3AF" />
+              <Search size={iconSize} color="#9CA3AF" />
             </View>
             <TextInput
               placeholder="Search plugins..."
@@ -131,7 +133,7 @@ export default function SelectPluginModal({
             </View>
           ) : filteredPlugins.length === 0 ? (
             <View className="items-center py-10">
-              <Monitor size={40} color="#9CA3AF" />
+              <Monitor size={iconSize} color="#9CA3AF" />
               <Text className="text-gray-500 mt-2">No plugins found</Text>
             </View>
           ) : (
@@ -159,7 +161,7 @@ export default function SelectPluginModal({
                     {/* CHECK */}
                     {isSelected && (
                       <View className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full items-center justify-center">
-                        <Check size={12} color="white" />
+                        <Check size={iconSize} color="white" />
                       </View>
                     )}
 
@@ -171,7 +173,7 @@ export default function SelectPluginModal({
                         />
                       ) : (
                         <View className="w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-lg items-center justify-center">
-                          <Monitor size={16} color="#9CA3AF" />
+                          <Monitor size={iconSize} color="#9CA3AF" />
                         </View>
                       )}
 

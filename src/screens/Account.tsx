@@ -8,6 +8,7 @@ import {
   TextInput,
   Modal,
   Alert,
+  Dimensions,
 } from "react-native";
 import {
   User,
@@ -44,6 +45,8 @@ export default function AccountScreen() {
     email: "", profilePic: "",
     createdAt: "",
   });
+    const { width } = Dimensions.get("window");
+    const iconSize = width * 0.05;
 
   const [editModal, setEditModal] = useState(false);
   const [passwordModal, setPasswordModal] = useState(false);
@@ -96,7 +99,7 @@ export default function AccountScreen() {
                       className="w-full h-full"
                     />
                   ) : (
-                    <User size={40} color={colorScheme === "dark" ? "white" : "black"} />
+                    <User size={iconSize} color={colorScheme === "dark" ? "white" : "black"} />
                   )}
                 </View>
               </View>
@@ -105,7 +108,7 @@ export default function AccountScreen() {
                 onPress={() => setEditModal(true)}
                 className="absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full"
               >
-                <Camera size={14} color="white" />
+                <Camera size={iconSize} color="white" />
               </TouchableOpacity>
             </View>
 
@@ -115,7 +118,7 @@ export default function AccountScreen() {
             </Text>
 
             <View className="flex-row items-center mt-1">
-              <Mail size={14} color="gray" />
+              <Mail size={iconSize} color="gray" />
               <Text className="ml-2 text-gray-500 dark:text-gray-400">
                 {user.email}
               </Text>
@@ -154,7 +157,6 @@ export default function AccountScreen() {
               </View>
               <ChevronRight color={colorScheme === "dark" ? "white" : "black"} />
             </View>
-
             <View className="px-5 py-4 flex-row justify-between items-center">
               <View>
                 <Text className="text-gray-500 text-sm">Email</Text>
@@ -162,9 +164,8 @@ export default function AccountScreen() {
                   {user.email}
                 </Text>
               </View>
-
               <View className="bg-green-100 px-2 py-1 rounded-full flex-row items-center">
-                <Check size={12} color="green" />
+                <Check size={iconSize} color="green" />
                 <Text className="text-green-700 text-xs ml-1">
                   Verified
                 </Text>
@@ -187,7 +188,7 @@ export default function AccountScreen() {
             className="px-5 py-4 flex-row justify-between items-center"
           >
             <View className="flex-row items-center gap-3">
-              <Key size={18} color="gray" />
+              <Key size={iconSize} color="gray" />
               <Text className="text-gray-900 dark:text-white">
                 Password
               </Text>
@@ -216,9 +217,9 @@ export default function AccountScreen() {
           <View className="px-5 py-3 flex-row justify-between items-center">
             <View className="flex-row items-center gap-3">
               {theme === "dark" ? (
-                <Sun size={20} color="white" />
+                <Sun size={iconSize} color="white" />
               ) : (
-                <Moon size={20} color="gray" />
+                <Moon size={iconSize} color="gray" />
               )}
               <Text className="text-gray-900 dark:text-white">
                 Appearance
@@ -268,9 +269,7 @@ export default function AccountScreen() {
                     name: data.name,
                     profilePic: data.profilePic,
                   });
-
                   const updatedUser = res.data?.user;
-
                   setUser((prev) => ({
                     ...prev,
                     name: updatedUser.name,
@@ -279,9 +278,7 @@ export default function AccountScreen() {
                       ? `${updatedUser.profilePic}?t=${Date.now()}`
                       : "",
                   }));
-
                   setEditModal(false); // close modal after save
-
                 } catch (err) {
                   console.log("Update error:", err);
                 }
@@ -300,18 +297,15 @@ export default function AccountScreen() {
                   Alert.alert("Fill all fields");
                   return;
                 }
-
                 if (newPassword.length < 8) {
                   Alert.alert("Min 8 characters");
                   return;
                 }
-
                 try {
                   await api.post("/auth/change-password", {
                     oldPassword: currentPassword,
                     newPassword,
                   });
-
                   Alert.alert("Password changed");
                   setPasswordModal(false);
                 } catch (err: any) {

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Dimensions,
 } from "react-native";
 import { Monitor, Trash2, Settings } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
@@ -39,6 +40,8 @@ export default function FramesScreen({ navigation }: any) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { colorScheme } = useColorScheme();
+    const { width } = Dimensions.get("window");
+    const iconSize = width * 0.05;
   const fetchFrames = async () => {
     try {
       const res = await api.get("/frames");
@@ -114,7 +117,7 @@ export default function FramesScreen({ navigation }: any) {
                 setShowDeleteModal(true);
               }}
             >
-              <Trash2 size={16} color={colorScheme === "dark" ? "white" : "black"} />
+              <Trash2 size={iconSize} color={colorScheme === "dark" ? "white" : "black"} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -123,7 +126,7 @@ export default function FramesScreen({ navigation }: any) {
                 setSelectedDevice(item);
               }}
             >
-              <Settings size={16} color={colorScheme === "dark" ? "white" : "black"}/>
+              <Settings size={iconSize} color={colorScheme === "dark" ? "white" : "black"} />
             </TouchableOpacity>
           </View>
         </View>

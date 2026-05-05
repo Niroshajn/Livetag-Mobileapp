@@ -38,7 +38,12 @@ export default function PreviewPage({
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [openInstanceId, setOpenInstanceId] = useState<string | null>(null);
-
+  const [playgroundSession, setPlaygroundSession] = useState<any>(null);
+  const [playgroundSessionId, setPlaygroundSessionId] =
+    useState<string | null>(null);
+  const [playgroundInstances, setPlaygroundInstances] = useState<
+    PluginInstance[]
+  >([]);
   // ✅ MODAL STATES
   const [showFrameModal, setShowFrameModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
@@ -68,6 +73,18 @@ export default function PreviewPage({
 
     return () => sub.remove();
   }, [sessionId]);
+
+    const loadPlaylistPlayground = async (playlistItemId: string) => {
+      const res = await api.get(
+        `/playlist/${playlistItemId}/get-playground`
+      );
+  
+      const data = res.data;
+  
+      setPlaygroundSession({ id: data.playgroundSessionId });
+      setPlaygroundSessionId(data.playgroundSessionId);
+      setPlaygroundInstances(data.playgroundConnectorConfigs || []);
+    };
   // FETCH DATA
   useEffect(() => {
     const fetchData = async () => {
@@ -106,10 +123,10 @@ export default function PreviewPage({
     fetchData();
   }, [pluginId]);
 
-  const handleExecute = () => {
-    Alert.alert("Execute", "Execution triggered");
+  const handleExecute = async () => {
+    if (!playgroundSessionId) return;
+    await api.get(`/execution/playground/${playgroundSessionId}`);
   };
-
   // ✅ OPEN FRAME MODAL
   const handleAddToPlaylist = () => {
     setShowFrameModal(true);

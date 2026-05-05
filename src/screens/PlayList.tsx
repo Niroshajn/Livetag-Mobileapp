@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Dimensions,
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import {
@@ -52,6 +53,8 @@ export default function PlaylistScreen() {
   const [selectedItem, setSelectedItem] = useState<PlaylistItem | null>(null);
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
+    const { width } = Dimensions.get("window");
+    const iconSize = width * 0.05;
   useEffect(() => {
     fetchPlaylist();
     fetchPlugins();
@@ -146,7 +149,7 @@ const openPlayground = async (item: PlaylistItem) => {
               />
             ) : (
               <View className="w-10 h-10 bg-[#2A2A2D] rounded-lg items-center justify-center">
-                <Monitor size={18} color="#9CA3AF" />
+                <Monitor size={iconSize} color="#9CA3AF" />
               </View>
             )}
             {/* TEXT */}
@@ -163,14 +166,14 @@ const openPlayground = async (item: PlaylistItem) => {
           {/* ACTIONS */}
           <View className="flex-row gap-3">
             <TouchableOpacity onPress={() => handleEdit(item)}>
-              <Pencil size={18} color="#9CA3AF" />
+              <Pencil size={iconSize} color="#9CA3AF" />
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => {
               setDeleteItemId(item.id);
               setOpenDeleteModal(true);
             }}>
-              <Trash2 size={18} color="#EF4444" />
+              <Trash2 size={iconSize} color="#EF4444" />
             </TouchableOpacity>
           </View>
         </View>
@@ -178,14 +181,14 @@ const openPlayground = async (item: PlaylistItem) => {
         {/* META */}
         <View className="flex-row justify-between mt-4">
           <View className="flex-row items-center gap-1">
-            <ArrowUpDown size={14} color="#9CA3AF" />
+            <ArrowUpDown size={iconSize} color="#9CA3AF" />
             <Text className="text-gray-400 text-xs">
               Priority {item.priority}
             </Text>
           </View>
 
           <View className="flex-row items-center gap-1">
-            <Zap size={14} color="#9CA3AF" />
+            <Zap size={iconSize} color="#9CA3AF" />
             <Text className="text-gray-400 text-xs">
               {item.refreshSeconds}s
             </Text>
@@ -227,7 +230,7 @@ const openPlayground = async (item: PlaylistItem) => {
             onPress={handleAdd}
             className="border border-blue-500 px-2 py-2 rounded-lg flex-row items-center w-full mt-5 justify-center"
           >
-            <Plus size={16} color="#3B82F6" />
+            <Plus size={iconSize} color="#3B82F6" />
             <Text className="text-blue-400 ml-2 text-sm">
               Add Item
             </Text>
@@ -237,7 +240,7 @@ const openPlayground = async (item: PlaylistItem) => {
         {/* LIST */}
         {items.length === 0 ? (
           <View className="flex-1 items-center justify-center">
-            <Monitor size={40} color="#6B7280" />
+            <Monitor size={iconSize} color="#6B7280" />
             <Text className="text-gray-500 mt-2">
               No playlist items
             </Text>

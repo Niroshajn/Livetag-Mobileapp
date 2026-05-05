@@ -140,7 +140,6 @@ export default function HelpScreen() {
   return (
     <Layout>
       <ScrollView className="flex-1 bg-white dark:bg-[#1a1a1a]  p-4">
-
         {/* HEADER */}
         <View className="flex-row items-center gap-3 mt-6 mb-5">
           <View className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl items-center justify-center">
@@ -214,7 +213,6 @@ export default function HelpScreen() {
             <View className="items-center py-6">
               <CheckCircle size={40} color="green" />
               <Text className="mt-3">Message Sent!</Text>
-
               <TouchableOpacity
                 onPress={resetForm}
                 className="mt-4 bg-gray-300 dark:bg-gray-100 px-4 py-2 rounded"

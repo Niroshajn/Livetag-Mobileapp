@@ -10,8 +10,8 @@ import {
 import { Wifi, Monitor, Check, X } from "lucide-react-native";
 import apiClient from "../lib/api";
 
-const { width } = Dimensions.get("window");
-
+  const { width } = Dimensions.get("window");
+  const iconSize = width * 0.05;
 type Frame = {
   id: number | string;
   name: string;
@@ -34,7 +34,7 @@ export default function SelectFrameModal({
   const [frames, setFrames] = useState<Frame[]>([]);
   const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-
+  
   useEffect(() => {
     if (!open) return;
     fetchFrames();
@@ -89,7 +89,7 @@ export default function SelectFrameModal({
               onPress={onClose}
               className="absolute right-0 top-0"
             >
-              <X size={20} color="#9CA3AF" />
+              <X size={iconSize} color="#9CA3AF" />
             </TouchableOpacity>
           </View>
 
@@ -105,7 +105,7 @@ export default function SelectFrameModal({
             </View>
           ) : frames.length === 0 ? (
             <View className="items-center py-10">
-              <Monitor size={40} color="#9CA3AF" />
+              <Monitor size={iconSize} color="#9CA3AF" />
               <Text className="text-gray-500 mt-2">
                 No devices available
               </Text>
@@ -135,14 +135,14 @@ export default function SelectFrameModal({
                     {/* Check */}
                     {isSelected && (
                       <View className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full items-center justify-center">
-                        <Check size={12} color="white" />
+                        <Check size={iconSize} color="white" />
                       </View>
                     )}
 
                     {/* Icon */}
                     <View className="items-center mb-2">
                       <View className="w-10 h-10 bg-gray-300 rounded-lg items-center justify-center">
-                        <Monitor size={18} color="#555" />
+                        <Monitor size={iconSize} color="#555" />
                       </View>
                     </View>
 
@@ -167,7 +167,7 @@ export default function SelectFrameModal({
                     {/* Status */}
                     {item.status === "online" && (
                       <View className="flex-row justify-center items-center mt-2 gap-1">
-                        <Wifi size={12} color="green" />
+                        <Wifi size={iconSize} color="green" />
                         <Text className="text-xs text-green-600">
                           Online
                         </Text>
