@@ -23,7 +23,8 @@ import {
 } from "react-native-image-picker";
 
 import { useColorScheme } from "nativewind";
-
+import { uploadToS3 } from "../types/uploadtoS3";
+import { UploadType } from "../types/upload";
 /* ============================================================
    TYPES
 ============================================================ */
@@ -317,175 +318,74 @@ function ConfigForm({
      UPLOAD IMAGE
   ============================================================ */
 
-  const uploadImage = useCallback(
-    async (
-      key: string,
-      image: SelectedImage
-    ) => {
-      if (!image.uri) {
-        return;
-      }
+ const uploadImage = useCallback(
+  async (key: string, image: SelectedImage) => {
+    try {
+      setUploadingKey(key);
 
-      try {
-        setUploadingKey(key);
+      // 1. Upload image to S3
+      const fileUrl = await uploadToS3(
+        image.uri,
+        UploadType.PLAYGROUND_CONNECTOR_INSTANCE,
+        {
+          playgroundConnectorConfigInstanceId: instance.id,
+        },
+        image.fileName,
+        image.type
+      );
 
-        const formData =
-          new FormData();
+      // 2. Save image URL to the backend
+      const updatedConfig = {
+        ...instance.config,
+        [key]: fileUrl,
+      };
 
-        /**
-         * IMPORTANT:
-         *
-         * Your backend image connector flow uses
-         * PLAYGROUND_CONNECTOR_INSTANCE.
-         *
-         * The connector instance ID tells the backend
-         * which playground connector instance owns
-         * this uploaded image.
-         */
-        formData.append(
-          "type",
-          "PLAYGROUND_CONNECTOR_INSTANCE"
-        );
-
-        formData.append(
-          "playgroundConnectorConfigInstanceId",
-          instance.id
-        );
-
-        formData.append(
-          "file",
-          {
-            uri: image.uri,
-            name: image.fileName,
-            type: image.type,
-          } as any
-        );
-
-        console.log(
-          "Uploading image:",
-          {
-            uri: image.uri,
-            name: image.fileName,
-            type: image.type,
-            instanceId: instance.id,
-            key,
-          }
-        );
-
-        /**
-         * Do not manually transform the URI.
-         * react-native-image-picker gives us the URI
-         * that React Native FormData expects.
-         */
-        const response =
-          await api.post(
-            "/upload",
-            formData,
-            {
-              headers: {
-                Accept:
-                  "application/json",
-                "Content-Type":
-                  "multipart/form-data",
-              },
-            }
-          );
-
-        console.log(
-          "Upload response:",
-          response.data
-        );
-
-        const fileUrl =
-          response.data?.url ??
-          response.data?.data?.url ??
-          response.data?.fileUrl;
-
-        if (!fileUrl) {
-          throw new Error(
-            "Upload succeeded but server did not return an image URL."
-          );
+      const response = await api.patch(
+        `/playground/${sessionId}/connector-instance/${instance.id}`,
+        {
+          config: updatedConfig,
         }
+      );
 
-        /**
-         * Update only this image field.
-         */
-        const updatedConfig = {
-          ...instance.config,
-          [key]: fileUrl,
-        };
+      // 3. Update local connector state
+      const savedConfig =
+        response.data?.config ?? updatedConfig;
 
-        /**
-         * IMPORTANT:
-         *
-         * Do NOT PATCH here.
-         *
-         * The parent PluginPlaygroundScreen already
-         * handles connector config persistence/debounce.
-         *
-         * Doing another PATCH here causes duplicate requests
-         * and can overwrite newer connector data.
-         */
-        onConfigChange(
-          instance.id,
-          updatedConfig
-        );
+      onConfigChange(instance.id, savedConfig);
 
-        /**
-         * Clear selected image after successful upload.
-         */
-        setSelectedImage(null);
+      // 4. Refresh the image and preview
+      setSelectedImage(null);
+      setImageVersion(Date.now());
+      onImageUploaded?.();
 
-        /**
-         * Force current image to reload.
-         */
-        setImageVersion(
-          Date.now()
-        );
+      Alert.alert("Success", "Image uploaded successfully.");
+    } catch (error: any) {
+      console.log(
+        "Image upload error:",
+        error?.response?.data ?? error
+      );
 
-        /**
-         * Tell parent to refresh preview/cache if it
-         * provides the callback.
-         */
-        onImageUploaded?.();
-
-        Alert.alert(
-          "Image uploaded",
-          "Image uploaded successfully."
-        );
-      } catch (error: any) {
-        console.log(
-          "Image upload failed:",
-          error
-        );
-
-        console.log(
-          "Upload error response:",
-          error?.response?.data
-        );
-
-        const message =
-          error?.response?.data?.message ||
-          error?.response?.data?.error ||
-          error?.message ||
-          "Unable to upload image.";
-
-        Alert.alert(
-          "Upload failed",
-          String(message)
-        );
-      } finally {
-        setUploadingKey(null);
-      }
-    },
-    [
-      instance.id,
-      instance.config,
-      onConfigChange,
-      onImageUploaded,
-    ]
-  );
-
+      Alert.alert(
+        "Upload failed",
+        String(
+          error?.response?.data?.message ??
+            error?.response?.data?.error ??
+            error?.message ??
+            "Unable to upload image."
+        )
+      );
+    } finally {
+      setUploadingKey(null);
+    }
+  },
+  [
+    instance.id,
+    instance.config,
+    sessionId,
+    onConfigChange,
+    onImageUploaded,
+  ]
+);
   /* ============================================================
      DELETE IMAGE
   ============================================================ */

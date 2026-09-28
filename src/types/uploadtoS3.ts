@@ -1,57 +1,57 @@
 import api from "../lib/api";
 import { UploadType } from "./upload";
 
+type PresignedUploadResponse = {
+  uploadUrl: string;
+  fileUrl: string;
+};
+
 export const uploadToS3 = async (
   fileUri: string,
-  uploadType: UploadType
+  uploadType: UploadType,
+  extra?: Record<string, any>,
+  fileName?: string,
+  mimeType = "image/jpeg"
 ): Promise<string> => {
-  try {
-    const fileName = fileUri.split("/").pop() || "image.jpg";
+  const originalName =
+    fileName || fileUri.split("/").pop()?.split("?")[0] || "image.jpg";
 
-    const extension = fileName.split(".").pop()?.toLowerCase();
-
-    const mimeType =
-      extension === "png"
-        ? "image/png"
-        : extension === "jpg" || extension === "jpeg"
-        ? "image/jpeg"
-        : "image/jpeg";
-
-    // ✅ 1. Get presigned URL
-    const { data } = await api.post("/s3/presigned-upload", {
+  const { data } = await api.post<PresignedUploadResponse>(
+    "/s3/presigned-upload",
+    {
       mimeType,
-      originalName: fileName,
+      originalName,
       uploadType,
-    });
+      ...(extra ?? {}),
+    }
+  );
 
-    const { uploadUrl, fileUrl } = data;
-    const upload = await new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-
-      xhr.open("PUT", uploadUrl);
-
-      xhr.setRequestHeader("Content-Type", mimeType);
-
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          resolve(true);
-        } else {
-          reject(new Error(`Upload failed: ${xhr.status}`));
-        }
-      };
-
-      xhr.onerror = () => reject(new Error("Network error"));
-
-      xhr.send({
-        uri: fileUri,
-        type: mimeType,
-        name: fileName,
-      } as any);
-    });
-
-    return fileUrl;
-  } catch (err) {
-    console.log("🚨 S3 Upload Error:", err);
-    throw err;
+  if (!data?.uploadUrl || !data?.fileUrl) {
+    throw new Error("Missing S3 upload URL or file URL.");
   }
+
+  const xhr = new XMLHttpRequest();
+
+  await new Promise<void>((resolve, reject) => {
+    xhr.open("PUT", data.uploadUrl);
+    xhr.setRequestHeader("Content-Type", mimeType);
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+      } else {
+        reject(new Error(`S3 upload failed: ${xhr.status}`));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error("S3 network error"));
+
+    xhr.send({
+      uri: fileUri,
+      name: originalName,
+      type: mimeType,
+    } as any);
+  });
+
+  return data.fileUrl;
 };
