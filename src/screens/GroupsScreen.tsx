@@ -66,6 +66,7 @@ interface GroupsResponse {
     hasPrevious: boolean;
   };
 }
+
 interface FramesResponse {
   data: any[];
   meta: {
@@ -78,6 +79,11 @@ interface FramesResponse {
   };
 }
 
+/**
+ * --------------------------------
+ * ONLINE STATUS
+ * --------------------------------
+ */
 function isDeviceOnline(updatedAt?: string) {
   if (!updatedAt) return false;
 
@@ -88,6 +94,11 @@ function isDeviceOnline(updatedAt?: string) {
   );
 }
 
+/**
+ * --------------------------------
+ * TIME AGO
+ * --------------------------------
+ */
 function timeAgo(date?: string) {
   if (!date) return "Never";
 
@@ -113,17 +124,30 @@ export default function FramesScreen({
   route,
 }: any) {
   const { colorScheme } = useColorScheme();
+
   const isDark = colorScheme === "dark";
+
   const { width } = Dimensions.get("window");
+
   const iconSize = width * 0.05;
+
+  /**
+   * --------------------------------
+   * GROUP PARAMS
+   * --------------------------------
+   */
   const params: RouteParams =
     route?.params || {};
+
   const selectedGroupId =
     params.groupId;
+
   const groupName =
     params.groupName;
+
   const groupCount =
     params.groupCount ?? 0;
+
   const [frames, setFrames] =
     useState<Frame[]>([]);
 
@@ -146,16 +170,27 @@ export default function FramesScreen({
     useState<FramesResponse["meta"] | null>(
       null
     );
+
   const [showAddPopup, setShowAddPopup] =
     useState(false);
+
   const [selectedDevice, setSelectedDevice] =
     useState<Frame | null>(null);
+
   const [openSettingsModal, setOpenSettingsModal] =
     useState(false);
+
   const [showDeleteModal, setShowDeleteModal] =
     useState(false);
+
   const [selectedId, setSelectedId] =
     useState<string | null>(null);
+
+  /**
+   * --------------------------------
+   * FETCH GROUPS
+   * --------------------------------
+   */
   const fetchGroups = useCallback(async () => {
     try {
       setGroupsLoading(true);
@@ -164,9 +199,12 @@ export default function FramesScreen({
         await api.get<GroupsResponse>(
           "/frame-groups"
         );
+
       const groupData =
         res.data?.data ?? [];
+
       setGroups(groupData);
+
       if (selectedGroupId) {
         const found =
           groupData.find(
@@ -174,6 +212,7 @@ export default function FramesScreen({
               String(group.id) ===
               String(selectedGroupId)
           );
+
         setCurrentGroup(
           found ?? null
         );
@@ -188,12 +227,19 @@ export default function FramesScreen({
       setGroupsLoading(false);
     }
   }, [selectedGroupId]);
+
+  /**
+   * --------------------------------
+   * FETCH FRAMES
+   * --------------------------------
+   */
   const fetchFrames =
     useCallback(async () => {
       try {
         setLoading(true);
 
         let endpoint = "";
+
         if (selectedGroupId) {
           endpoint =
             `/frame-groups/${selectedGroupId}/frames?page=${page}`;
@@ -201,17 +247,37 @@ export default function FramesScreen({
           endpoint =
             `/frames?page=${page}`;
         }
+
         const res =
           await api.get(endpoint);
+
+        /**
+         * Your web API returns:
+         *
+         * {
+         *   data: [],
+         *   meta: {}
+         * }
+         *
+         * But your old mobile code expected:
+         *
+         * []
+         *
+         * This handles BOTH.
+         */
         const response =
           res.data;
+
         const data =
           Array.isArray(response)
             ? response
             : response?.data ?? [];
+
         const responseMeta =
           response?.meta ?? null;
+
         setMeta(responseMeta);
+
         const formatted =
           data.map((f: any) => ({
             id: f.id,
@@ -219,43 +285,54 @@ export default function FramesScreen({
             timezone: f.timezone,
             isEnabled: f.isEnabled,
             updatedAt: f.updatedAt,
+
             previewImageUrl:
               f.CurrentPreviewImage
                 ? `${f.CurrentPreviewImage}?t=${Date.now()}`
                 : undefined,
+
             battery:
               f.telemetry?.battery
                 ? Number(
                     f.telemetry.battery
                   )
                 : 0,
+
             wifiSSID:
               f.telemetry?.wifiSSID ??
               "Unknown",
+
             signalStrength:
               f.telemetry?.rssi ?? 0,
+
             sleepConfig:
               f.sleepConfig ?? null,
+
             status:
               isDeviceOnline(
                 f.updatedAt
               )
                 ? "online"
                 : "offline",
+
             modelNo:
               f.devices?.[0]?.modelNo,
+
             width:
               f.devices?.[0]
                 ?.displayInfo
                 ?.displayResolutionWidth,
+
             height:
               f.devices?.[0]
                 ?.displayInfo
                 ?.displayResolutionHeight,
+
             friendlyId:
               f.devices?.[0]
                 ?.friendlyId,
           }));
+
         setFrames(formatted);
       } catch (error: any) {
         console.log(
@@ -263,15 +340,28 @@ export default function FramesScreen({
           error?.response?.data ||
             error
         );
+
         setFrames([]);
       } finally {
         setLoading(false);
       }
     }, [selectedGroupId, page]);
+
+  /**
+   * --------------------------------
+   * INITIAL LOAD
+   * --------------------------------
+   */
   useEffect(() => {
     fetchFrames();
     fetchGroups();
   }, [fetchFrames, fetchGroups]);
+
+  /**
+   * --------------------------------
+   * OPEN SETTINGS
+   * --------------------------------
+   */
   const openSettings = async (
     device: Frame
   ) => {
@@ -291,6 +381,12 @@ export default function FramesScreen({
       );
     }
   };
+
+  /**
+   * --------------------------------
+   * DELETE DEVICE
+   * --------------------------------
+   */
   const deleteDevice = async (
     frameId: string
   ) => {
@@ -325,6 +421,11 @@ export default function FramesScreen({
     }
   };
 
+  /**
+   * --------------------------------
+   * MOVE DEVICE TO GROUP
+   * --------------------------------
+   */
   const moveDeviceToGroup = async (
     groupId: string,
     frameId: string
@@ -334,6 +435,11 @@ export default function FramesScreen({
         `/frame-groups/${groupId}/frames/${frameId}`
       );
 
+      /**
+       * If viewing a specific group,
+       * the device may disappear after
+       * moving it.
+       */
       await fetchFrames();
 
       Alert.alert(
@@ -346,6 +452,7 @@ export default function FramesScreen({
         error?.response?.data ||
           error
       );
+
       Alert.alert(
         "Error",
         error?.response?.data?.message ||
@@ -354,6 +461,11 @@ export default function FramesScreen({
     }
   };
 
+  /**
+   * --------------------------------
+   * DEVICE CARD
+   * --------------------------------
+   */
   const renderItem = ({
     item,
   }: {
@@ -361,6 +473,7 @@ export default function FramesScreen({
   }) => {
     const online =
       item.status === "online";
+
     return (
       <TouchableOpacity
         activeOpacity={0.9}
@@ -387,6 +500,7 @@ export default function FramesScreen({
           )
         }
       >
+        {/* PREVIEW */}
         <View
           className="
             w-full
@@ -418,6 +532,7 @@ export default function FramesScreen({
             />
           )}
         </View>
+
         {/* INFO */}
         <View className="p-4">
           <View className="flex-row justify-between">
@@ -648,6 +763,11 @@ export default function FramesScreen({
     );
   };
 
+  /**
+   * --------------------------------
+   * LOADING
+   * --------------------------------
+   */
   if (loading && frames.length === 0) {
     return (
       <AppLayout navigation={navigation}>
@@ -865,6 +985,7 @@ export default function FramesScreen({
           </Pressable>
         </View>
       )}
+
       {/* ADD DEVICE */}
       <AddDeviceModal
         visible={showAddPopup}
@@ -875,6 +996,7 @@ export default function FramesScreen({
         hideGroupSelect={true}
         groupId={selectedGroupId}
       />
+
       {/* SETTINGS */}
       {selectedDevice && (
         <DeviceSettingsModal
@@ -895,10 +1017,12 @@ export default function FramesScreen({
                   : frame
               )
             );
+
             setOpenSettingsModal(false);
           }}
         />
       )}
+
       {/* DELETE */}
       <DeleteModal
         visible={showDeleteModal}
@@ -911,6 +1035,7 @@ export default function FramesScreen({
               selectedId
             );
           }
+
           setSelectedId(null);
           setShowDeleteModal(false);
         }}

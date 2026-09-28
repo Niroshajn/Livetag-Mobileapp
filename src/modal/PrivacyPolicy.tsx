@@ -5,17 +5,13 @@ export default function PrivacyPolicyScreen() {
     return (
         <ScrollView className="flex-1 bg-gray-50 dark:bg-black">
             <View className="max-w-4xl mx-auto px-6 py-10">
-
                 {/* Title */}
                 <Text className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                     Privacy Policy
                 </Text>
-
                 <Text className="text-xs text-gray-500 mb-8">
                     Effective Date: 01 Oct 2025
                 </Text>
-
-                {/* Intro */}
                 {/* Intro */}
                 <View className="mb-6">
                     <Text className="text-gray-700 dark:text-gray-300 leading-5">
@@ -25,7 +21,6 @@ export default function PrivacyPolicyScreen() {
                         connected platforms.
                     </Text>
                 </View>
-
                 {/* 1 */}
                 <Section title="1. Information We Collect">
                     <View>
@@ -36,7 +31,6 @@ export default function PrivacyPolicyScreen() {
                         <Text className="text-gray-700 dark:text-gray-300">• Usage analytics and logs</Text>
                     </View>
                 </Section>
-
                 {/* 2 */}
                 <Section title="2. How We Use Your Data">
                     <View>
@@ -47,7 +41,6 @@ export default function PrivacyPolicyScreen() {
                         <Text className="text-gray-700 dark:text-gray-300">• Customer support and communication</Text>
                     </View>
                 </Section>
-
                 {/* 3 */}
                 <Section title="3. GDPR Compliance (EU Users)">
                     <Text className="text-gray-700 dark:text-gray-300 mb-2">
