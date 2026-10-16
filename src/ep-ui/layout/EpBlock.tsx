@@ -1,53 +1,22 @@
 import React from "react";
 import {
   View,
-  type StyleProp,
-  type ViewStyle,
+  type DimensionValue,
 } from "react-native";
 
-export type EpBlockProps = {
-  children?: React.ReactNode;
+import type { DeviceProfile } from "../../../packages/ltag/device";
 
+type EpBlockProps = {
+  children?: React.ReactNode;
   full?: boolean;
   border?: boolean;
-
   hAlign?: "left" | "center" | "right";
   vAlign?: "top" | "center" | "bottom";
-
-  style?: StyleProp<ViewStyle>;
+  profile?: DeviceProfile;
+  width?: DimensionValue;
+  height?: DimensionValue;
+  padding?: number;
 };
-
-function getHorizontalAlignment(
-  align?: EpBlockProps["hAlign"]
-): "flex-start" | "center" | "flex-end" {
-  switch (align) {
-    case "center":
-      return "center";
-
-    case "right":
-      return "flex-end";
-
-    case "left":
-    default:
-      return "flex-start";
-  }
-}
-
-function getVerticalAlignment(
-  align?: EpBlockProps["vAlign"]
-): "flex-start" | "center" | "flex-end" {
-  switch (align) {
-    case "center":
-      return "center";
-
-    case "bottom":
-      return "flex-end";
-
-    case "top":
-    default:
-      return "flex-start";
-  }
-}
 
 export function EpBlock({
   children,
@@ -55,72 +24,54 @@ export function EpBlock({
   border = false,
   hAlign = "left",
   vAlign = "top",
-  style,
+  profile,
+  width,
+  height,
+  padding,
 }: EpBlockProps) {
   const horizontalAlignment =
-    getHorizontalAlignment(hAlign);
+    hAlign === "center"
+      ? "center"
+      : hAlign === "right"
+        ? "flex-end"
+        : "flex-start";
 
   const verticalAlignment =
-    getVerticalAlignment(vAlign);
+    vAlign === "center"
+      ? "center"
+      : vAlign === "bottom"
+        ? "flex-end"
+        : "flex-start";
+
+  const blockPadding = full
+    ? 0
+    : padding ?? profile?.blockPaddingY ?? 12;
 
   return (
     <View
-      style={[
-        {
-          /*
-           * A block is a card/item inside a column.
-           */
-          width: "100%",
+      style={{
+        width: width ?? "100%",
+        height,
+        flex: height === undefined ? 1 : undefined,
+        flexShrink: 1,
+        minWidth: 0,
+        minHeight: 0,
+        alignSelf: "stretch",
 
-          /*
-           * VERY IMPORTANT:
-           *
-           * Without flex: 1, a block containing an image
-           * may not receive the available height.
-           *
-           * This also lets multiple blocks share the column.
-           */
-          flex: full ? 1 : 1,
+        flexDirection: "column",
+        justifyContent: verticalAlignment,
+        alignItems: horizontalAlignment,
 
-          minWidth: 0,
+        // Match the web block's padding on all sides.
+        padding: blockPadding,
 
-          /*
-           * Image + text should be vertical.
-           */
-          flexDirection: "column",
+        borderWidth: border ? 1 : 0,
+        borderColor: "#000000",
+        borderStyle: "solid",
 
-          /*
-           * Horizontal alignment.
-           */
-          alignItems: horizontalAlignment,
-
-          /*
-           * Vertical alignment.
-           */
-          justifyContent: verticalAlignment,
-
-          /*
-           * Don't allow image/text to escape the card.
-           */
-          overflow: "hidden",
-
-          backgroundColor: "#ffffff",
-
-          /*
-           * Similar to the web preview.
-           */
-          padding: full ? 0 : 4,
-        },
-
-        border
-          ? {
-              borderWidth: 1,
-              borderColor: "#777777",
-            }
-          : null,
-
-        style,
-      ]}
+        backgroundColor: "#ffffff",
+        overflow: "hidden",
+      }}
     >
       {children}
     </View>

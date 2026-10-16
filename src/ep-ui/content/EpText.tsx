@@ -1,64 +1,124 @@
+
 import React from "react";
-import { Text, StyleSheet } from "react-native";
+import {
+  Text,
+  View,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from "react-native";
+
+import type { DeviceProfile } from "../../../packages/ltag/device";
 
 type EpTextProps = {
-  children: React.ReactNode;
-  align?: "center";
-  vAlign?: "center";
+  children?: React.ReactNode;
   size?: "small" | "medium" | "large";
+  align?: "left" | "center" | "right";
+  vAlign?: "top" | "center" | "bottom";
+  profile?: DeviceProfile;
+  width?: number;
+  height?: number;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
 };
 
-export const EpText = ({
+export function EpText({
   children,
   size = "medium",
-  align,
-  vAlign,
-}: EpTextProps) => {
+  align = "left",
+  vAlign = "top",
+  profile,
+  width,
+  height,
+  style,
+  textStyle,
+}: EpTextProps) {
+const fontSize =
+  profile?.textSizes?.[size] ??
+  { small: 16, medium: 18, large: 22 }[size];
+
+const lineHeight = fontSize + 4;
+// DEBUG LOGS
+console.log("[MOBILE FONT CHECK]", {
+  requestedFontFamily: textStyle,
+  fontSize,
+  lineHeight,
+  platformFont: "Roboto (Android default is usually Roboto)",
+});
+console.log("[EP TEXT DEBUG]", {
+  text: typeof children === "string" ? children : "",
+  size,
+  profileName: profile?.canvasWidth,
+  fontSize,
+  lineHeight,
+  profileTextSizes: profile?.textSizes,
+  profileLineHeight: profile?.lineHeight,
+});
+  const debugText =
+    typeof children === "string" || typeof children === "number"
+      ? String(children)
+      : "";
+
   return (
-    <Text
+    <View
+      onLayout={(event) => {
+        console.log("[EP TEXT VIEW]", {
+          text: debugText,
+          width: event.nativeEvent.layout.width,
+          height: event.nativeEvent.layout.height,
+          fontSize,
+          lineHeight,
+        });
+      }}
       style={[
-        styles.text,
-
-        size === "small" && styles.small,
-        size === "medium" && styles.medium,
-        size === "large" && styles.large,
-
-        align === "center" && styles.center,
-        vAlign === "center" && styles.vCenter,
+        {
+          width: width ?? "100%",
+          height,
+          minWidth: 0,
+          minHeight: 0,
+          flexShrink: 1,
+          justifyContent:
+            vAlign === "center"
+              ? "center"
+              : vAlign === "bottom"
+                ? "flex-end"
+                : "flex-start",
+        },
+        style,
       ]}
     >
-      {children}
-    </Text>
-  );
-};
-
-const styles = StyleSheet.create({
-  text: {
-    color: "#000",
+   <Text
+  allowFontScaling={false}
+  onTextLayout={(event) => {
+    console.log("[EP TEXT LAYOUT]", {
+      text: debugText,
+      fontSize,
+      lineHeight,
+      lines: event.nativeEvent.lines.map(
+        (line) => line.text
+      ),
+      lineWidths: event.nativeEvent.lines.map(
+        (line) => line.width
+      ),
+    });
+  }}
+ style={[
+  {
+    color: "#000000",
+    fontFamily: "Roboto",
+    fontSize,
+    lineHeight,
+    textAlign: align,
+    includeFontPadding: false,
     flexShrink: 1,
-    width: "100%",
   },
+  textStyle,
+]}
+>
+  {children == null ? null : children}
+</Text>
+    </View>
+  );
+}
 
-  small: {
-    fontSize: 11,
-    lineHeight: 13,
-  },
-
-  medium: {
-    fontSize: 14,
-    lineHeight: 17,
-  },
-
-  large: {
-    fontSize: 20,
-    lineHeight: 24,
-  },
-
-  center: {
-    textAlign: "center",
-  },
-
-  vCenter: {
-    textAlignVertical: "center",
-  },
-});
+export default EpText;

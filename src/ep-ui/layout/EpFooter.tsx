@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View } from "react-native";
 
 type EpFooterProps = {
   children: React.ReactNode;
@@ -7,14 +7,10 @@ type EpFooterProps = {
 
 export function EpFooter({ children }: EpFooterProps) {
   return (
-    <View style={styles.footer}>
+    <View className="w-full">
       {children}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  footer: {
-    width: "100%",
-  },
-});
+export default EpFooter;

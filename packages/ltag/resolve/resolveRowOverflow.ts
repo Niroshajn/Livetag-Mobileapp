@@ -1,151 +1,80 @@
-import type {
-  EpNode,
-  EpColumnsNode,
-  EpRowNode,
-} from "../types";
+import type { EpRowNode, EpNode } from "../types";
+import type { DeviceProfile } from "../device";
+import { resolveColumnOverflow } from "./resolveColumnOverflow";
+import { estimateBlockHeight } from "./estimate";
 
-import type {
-  DeviceProfile,
-} from "../device";
-
-/* =========================================================
-   RESOLVE ROW OVERFLOW
-========================================================= */
-
-export function resolveRowOverflow(
-  node: EpRowNode,
-  _profile: DeviceProfile,
-  _maxHeight: number
-): EpNode {
-  const children =
-    node.children ?? [];
-
-  /* -------------------------------------------------------
-     EMPTY ROW
-  ------------------------------------------------------- */
-
-  if (children.length === 0) {
-    return {
-      ...node,
-      children: [],
-    };
+function extractProps(block?: EpNode) {
+  if (!block || block.type !== "block") {
+    return { size: undefined, align: undefined, type: "text" };
   }
 
-  /* -------------------------------------------------------
-     EXPLICIT COLUMN GRID
-     
-     Example:
+  const child = block.children.find(
+    (c) => c.type === "text" || c.type === "stat"
+  );
 
-       grid--cols-3
-
-     becomes:
-
-       column 1 -> items 1,4
-       column 2 -> items 2,5
-       column 3 -> item 3
-  ------------------------------------------------------- */
-
-  if (
-    node.overflow ===
-    "columns"
-  ) {
-    const maxColumns = Math.max(
-      1,
-      Math.floor(
-        node.maxColumns ?? 1
-      )
-    );
-
-    /*
-     * Never create more columns than
-     * there are children.
-     */
-    const columnCount =
-      Math.min(
-        maxColumns,
-        children.length
-      );
-
-    const columns: EpNode[][] =
-      Array.from(
-        {
-          length:
-            columnCount,
-        },
-        () => []
-      );
-
-    /*
-     * IMPORTANT:
-     *
-     * Distribute row-by-row.
-     *
-     * 5 items, 3 columns:
-     *
-     * item 1 -> col 0
-     * item 2 -> col 1
-     * item 3 -> col 2
-     * item 4 -> col 0
-     * item 5 -> col 1
-     */
-    children.forEach(
-      (
-        child,
-        index
-      ) => {
-        const columnIndex =
-          index %
-          columnCount;
-
-        columns[
-          columnIndex
-        ].push(child);
-      }
-    );
-
-    const result: EpColumnsNode =
-      {
-        type: "columns",
-
-        columns,
-      };
-
-    console.log(
-      "========== RESOLVE GRID =========="
-    );
-
-    console.log(
-      "MAX COLUMNS:",
-      maxColumns
-    );
-
-    console.log(
-      "ACTUAL COLUMNS:",
-      columnCount
-    );
-
-    console.log(
-      "ITEM COUNT:",
-      children.length
-    );
-
-    console.log(
-      "ITEMS PER COLUMN:",
-      columns.map(
-        (column) =>
-          column.length
-      )
-    );
-
-    console.log(
-      "=================================="
-    );
-
-    return result;
+  if (!child) {
+    return { size: undefined, align: undefined, type: "text" };
   }
 
   return {
-    ...node,
-    children,
+    size: child.size,
+    type: child.type,
+  };
+}
+export function resolveRowOverflow(
+  row: EpRowNode,
+  profile: DeviceProfile,
+  maxHeight: number
+): EpNode {
+  if (row.overflow === "columns") {
+    return resolveColumnOverflow(row, profile, maxHeight, row.maxColumns ?? 2);
+  }
+
+  let used = 0;
+  const visible: EpNode[] = [];
+
+  for (const block of row.children) {
+    if (block.type !== "block") continue;
+    const h = estimateBlockHeight(block, profile);
+    if (used + h > maxHeight) break;
+    used += h + profile.blockGap;
+    visible.push(block);
+  }
+
+  const hidden = row.children.length - visible.length;
+const lastBlock =
+  visible.length > 0
+    ? visible[visible.length - 1]
+    : undefined;
+  const { size, type } = extractProps(lastBlock);
+ if (hidden > 0) {
+  visible.push({
+    type: "block",
+    full:
+      lastBlock && lastBlock.type === "block"
+        ? lastBlock.full ?? false
+        : false,
+    border:
+      lastBlock && lastBlock.type === "block"
+        ? lastBlock.border ?? false
+        : false,
+    children: [
+      type === "stat"
+        ? {
+            type: "stat",
+            value: `and ${hidden} more`,
+            size,
+          }
+        : {
+            type: "text",
+            text: `and ${hidden} more`,
+            size,
+          },
+    ],
+  });
+}
+  return {
+    type: "row",
+    children: visible,
   };
 }

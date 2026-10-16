@@ -8,37 +8,33 @@ export interface EpSegmentCell {
 export interface EpSegmentViewNode {
   type: "segment-view";
   cell: EpSegmentCell;
-
   children: EpNode[];
-
   regionBox?: {
     width: number;
     height: number;
     offsetX: number;
     offsetY: number;
   };
+
+  
 }
 
 export interface EpSegmentNode {
   type: "segment";
   rows: number;
   cols: number;
-
   rowWeights?: number[];
   colWeights?: number[];
-
   full?: boolean;
-
-  // IMPORTANT
   children: EpSegmentViewNode[];
 }
 
-export interface EpCanvasNode {
+export type EpCanvasNode = {
   type: "canvas";
   full?: boolean;
   children: EpNode[];
   overlay?: EpNode[];
-}
+};
 
 export interface EpRowNode {
   type: "row";
@@ -48,80 +44,65 @@ export interface EpRowNode {
   children: EpNode[];
 }
 
-export interface EpColumnsNode {
+export type EpColumnsNode = {
   type: "columns";
   columns: EpNode[][];
-}
+};
 
-export interface EpColumnNode {
+export type EpColumnNode = {
   type: "column";
   children: EpNode[];
-}
+};
 
-export interface EpBlockNode {
+export type EpBlockNode = {
   type: "block";
-
   width?: number;
   full?: boolean;
   border?: boolean;
   padding?: number;
-
-  hAlign?: "center";
-  vAlign?: "center";
-
+  hAlign?: "center"; // horizontal center
+  vAlign?: "center"; // vertical center
   children: EpNode[];
-}
+};
 
 export type EpTextSize = "small" | "medium" | "large";
-
 export interface EpTextNode {
   type: "text";
-
   text: string;
-
   size?: EpTextSize;
   align?: "center";
-  hAlign?: "center";
+  hAlign?: "center"; // horizontal center
   vAlign?: "center";
 }
 
-export interface EpStatNode {
+export type EpStatNode = {
   type: "stat";
-
   value: string;
   label?: string;
-
-  size?: EpTextSize;
-
-  hAlign?: "center";
+  // align?: "center";
+  size?: "small" | "medium" | "large" ;
+  hAlign?: "center"; // horizontal center
   vAlign?: "center";
-}
+};
 
-export interface EpImageNode {
+export type EpImageNode = {
   type: "image";
-
   src: string;
-
   fit?: "contain" | "cover";
-
   align?: "left" | "center" | "right";
-
   width?: number;
   height?: number;
 
-  overlayText?: string;
+  overlayText?: string; 
   overlayImage?: string;
-}
+};
 
-export interface EpIframeNode {
+export type EpIframeNode = {
   type: "iframe";
-
   src: string;
-
   width?: number;
   height?: number;
-}
-
+};
 export type EpNode =
   | EpCanvasNode
   | EpSegmentNode

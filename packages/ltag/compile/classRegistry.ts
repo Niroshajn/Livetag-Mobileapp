@@ -1,63 +1,135 @@
 // packages/ltag/compile/classRegistry.ts
 
-export const ALLOWED_CLASS_LITERALS =
-  new Set<string>([
-    // Layout
-    "layout",
-    "layout--full",
-    "layout--col",
-    "layout--row",
+export const ALLOWED_CLASS_LITERALS = new Set<string>([
+  // =========================================================
+  // LEGACY / GENERIC LAYOUT
+  // =========================================================
 
-    // Grid
-    "grid",
+  "layout",
+  "layout--full",
+  "layout--col",
+  "layout--row",
 
-    // Items
-    "item",
-    "item--full",
-    "item--center",
-    "item--border",
-    "item--hcenter",
-    "item--vcenter",
+  "grid",
 
-    // Iframe
-    "iframe",
+  // =========================================================
+  // LEGACY ITEMS
+  // =========================================================
 
-    // Text
-    "text",
-    "text--small",
-    "text--medium",
-    "text--large",
-    "text--h-center",
-    "text--v-center",
-    "text--center",
+  "item",
+  "item--full",
+  "item--center",
+  "item--border",
+  "item--hcenter",
+  "item--vcenter",
 
-    // Stat
-    "stat",
-    "value",
-    "stat-value",
-    "stat-value--small",
-    "stat-value--medium",
-    "stat-value--large",
-    "stat-value--center",
+  // =========================================================
+  // EP CANVAS
+  // =========================================================
 
-    // Label
-    "label",
+  "ep-canvas",
+  "ep-canvas--full",
+  "ep-canvas-overlay",
 
-    // Image
-    "image",
-    "ep-image",
-    "ep-image-wrap",
-    "ep-image-overlay",
+  // =========================================================
+  // EP SEGMENT
+  // =========================================================
 
-    // Overlay
-    "overlay",
+  "segment",
+  "segment-view",
 
-    // Segment
-    "segment",
-    "segment-view",
-  ]);
+  "ep-segment",
+  "ep-segment-view",
+
+  // =========================================================
+  // EP ROW
+  // =========================================================
+
+  "ep-row",
+
+  // =========================================================
+  // EP COLUMNS
+  // =========================================================
+
+  "ep-columns",
+  "ep-column",
+
+  // =========================================================
+  // EP BLOCK
+  // =========================================================
+
+  "ep-block",
+  "ep-block--border",
+  "ep-block--full",
+  "ep-block--hcenter",
+  "ep-block--vcenter",
+  "ep-block--center",
+
+  // =========================================================
+  // IFRAME
+  // =========================================================
+
+  "iframe",
+  "ep-iframe-wrap",
+  "ep-iframe",
+
+  // =========================================================
+  // TEXT
+  // =========================================================
+
+  "text",
+  "text--small",
+  "text--medium",
+  "text--large",
+
+  "text--h-center",
+  "text--v-center",
+  "text--center",
+
+  // =========================================================
+  // STAT
+  // =========================================================
+
+  "stat",
+
+  "value",
+
+  "stat-value",
+  "stat-value--small",
+  "stat-value--medium",
+  "stat-value--large",
+  "stat-value--center",
+
+  "ep-stat--center",
+
+  // =========================================================
+  // LABEL
+  // =========================================================
+
+  "label",
+
+  // =========================================================
+  // IMAGE
+  // =========================================================
+
+  "image",
+
+  "ep-image",
+  "ep-image-wrap",
+  "ep-image-overlay",
+
+  // =========================================================
+  // GENERIC OVERLAY
+  // =========================================================
+
+  "overlay",
+]);
 
 export const ALLOWED_CLASS_PATTERNS: RegExp[] = [
+  // =========================================================
+  // GRID
+  // =========================================================
+
   /^grid--cols-\d+$/,
   /^grid--rows-\d+$/,
 ];

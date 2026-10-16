@@ -4,79 +4,67 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
+import type { DeviceProfile } from "../../../packages/ltag/device";
 
-export type DeviceProfile = {
-  canvasWidth: number;
-  canvasHeight: number;
-  [key: string]: any;
-};
-
-export type EpCanvasProps = {
+type EpCanvasProps = {
   children?: React.ReactNode;
-
-  profile: DeviceProfile;
-
-  full?: boolean;
-
   overlay?: React.ReactNode;
-
+  full?: boolean;
+  profile: DeviceProfile;
   style?: StyleProp<ViewStyle>;
 };
 
 export function EpCanvas({
   children,
-  profile,
-  full = false,
   overlay,
+  full = false,
+  profile,
   style,
 }: EpCanvasProps) {
-  return (
-    <View
-      style={[
-        {
-          width: profile.canvasWidth,
+  const width = Number(profile.canvasWidth);
+  const height = Number(profile.canvasHeight);
+const canvasPadding = full ? 0 : 12;
 
-          height: profile.canvasHeight,
-
-          backgroundColor: "#ffffff",
-
-          overflow: "hidden",
-
-          position: "relative",
-
-          flexDirection: "column",
-
-          alignItems: "stretch",
-
-          justifyContent: "flex-start",
-        },
-
-        full
-          ? {
-              padding: 0,
-            }
-          : undefined,
-
-        style,
-      ]}
-    >
-      {children}
-
+return (
+  <View
+    style={[
+      {
+        width,
+        height,
+        minWidth: width,
+        minHeight: height,
+        maxWidth: width,
+        maxHeight: height,
+        padding: canvasPadding,
+        backgroundColor: "#ffffff",
+        position: "relative",
+        overflow: "hidden",
+      },
+      style,
+    ]}
+  >
+     <View
+  style={{
+    flex: 1,
+    alignSelf: "stretch",
+    minWidth: 0,
+    minHeight: 0,
+    overflow: "hidden",
+  }}
+>
+  {children}
+</View>
       {overlay ? (
         <View
           pointerEvents="none"
           style={{
             position: "absolute",
-
-            left: 0,
-
-            top: 0,
-
-            width: profile.canvasWidth,
-
-            height: profile.canvasHeight,
-
+            right: 30,
+            bottom: 20,
+            maxWidth: width - 40,
             zIndex: 999,
+            elevation: 999,
+            alignSelf: "flex-end",
           }}
         >
           {overlay}

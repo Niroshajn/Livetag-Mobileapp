@@ -1,4 +1,4 @@
-// EpColumn.tsx
+
 import React from "react";
 import {
   View,
@@ -6,29 +6,25 @@ import {
   type ViewStyle,
 } from "react-native";
 
-export type EpColumnProps = {
+type EpColumnProps = {
   children?: React.ReactNode;
-  columns?: number;
   style?: StyleProp<ViewStyle>;
 };
 
-export function EpColumn({
-  children,
-  style,
-}: EpColumnProps) {
+export function EpColumn({ children, style }: EpColumnProps) {
   return (
     <View
       style={[
         {
-          width: "100%",
-          flexGrow: 1,
-          flexShrink: 1,
+          flex: 1,
           minWidth: 0,
+          minHeight: 0,
+          width: "100%",
           flexDirection: "column",
           alignItems: "stretch",
-          justifyContent: "flex-start",
-          overflow: "hidden",
-          backgroundColor: "#ffffff",
+          alignSelf: "stretch",
+          gap: 8,
+          overflow: "visible",
         },
         style,
       ]}

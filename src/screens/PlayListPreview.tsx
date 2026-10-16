@@ -13,7 +13,6 @@ import {
   Linking,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -24,17 +23,23 @@ import WebView from "react-native-webview";
 
 import { Liquid } from "liquidjs";
 
-import { EpImage } from "../ep-ui";
+
+import {
+  EpCanvas,
+  EpRow,
+  EpBlock,
+  EpText,
+  EpStat,
+  EpImage,
+  EpColumn,
+  EpColumns,
+} from "../ep-ui";
 
 import type { EpNode } from "../../packages/ltag";
 
-import {
-  compileLTHtml,
-} from "../../packages/ltag/compile/compiler";
+import { compileLTHtml } from "../../packages/ltag/compile/compiler";
 
-import {
-  resolveLayout,
-} from "../../packages/ltag/resolve/resolveLayout";
+import { resolveLayout } from "../../packages/ltag/resolve/resolveLayout";
 
 import {
   DEFAULT_DEVICE_PROFILE,
@@ -43,9 +48,7 @@ import {
   E6_13IN_1200x1600,
 } from "../../packages/ltag/device";
 
-import type {
-  DeviceProfile,
-} from "../../packages/ltag/device";
+import type { DeviceProfile } from "../../packages/ltag/device";
 
 import api from "../lib/api";
 
@@ -58,9 +61,7 @@ import {
    TYPES
 ============================================================ */
 
-type Orientation =
-  | "landscape"
-  | "portrait";
+type Orientation = "landscape" | "portrait";
 
 type Plugin = {
   pluginId: string;
@@ -109,8 +110,7 @@ type PlaygroundSessionResponse = {
 type PlaylistPlaygroundResponse = {
   playgroundSessionId: string;
 
-  playgroundConnectorConfigs:
-    PluginInstance[];
+  playgroundConnectorConfigs: PluginInstance[];
 
   oauthTokens?: any;
 };
@@ -133,56 +133,34 @@ type Props = {
    HELPERS
 ============================================================ */
 
-const normalizeInstanceKey = (
-  key: string = ""
-) =>
+const normalizeInstanceKey = (key: string = "") =>
   key
     .trim()
     .replace(/\s+/g, "_")
     .replace(/^[^a-zA-Z]+/, "");
 
-const appendCacheVersion = (
-  src: string,
-  version: number
-) => {
+const appendCacheVersion = (src: string, version: number) => {
   if (!src || !version) {
     return src;
   }
 
-  return `${src}${
-    src.includes("?")
-      ? "&"
-      : "?"
-  }v=${version}`;
+  return `${src}${src.includes("?") ? "&" : "?"}v=${version}`;
 };
 
 const getDefaultOrientation = (
   width: number,
   height: number
-): Orientation =>
-  width >= height
-    ? "landscape"
-    : "portrait";
+): Orientation => (width >= height ? "landscape" : "portrait");
 
 const getOrientedDimensions = (
   width: number,
   height: number,
   orientation: Orientation
 ) => {
-  const max = Math.max(
-    width,
-    height
-  );
+  const max = Math.max(width, height);
+  const min = Math.min(width, height);
 
-  const min = Math.min(
-    width,
-    height
-  );
-
-  if (
-    orientation ===
-    "landscape"
-  ) {
+  if (orientation === "landscape") {
     return {
       width: max,
       height: min,
@@ -199,56 +177,23 @@ const getOrientedProfile = (
   baseProfile: DeviceProfile,
   orientation: Orientation
 ): DeviceProfile => {
-  const dimensions =
-    getOrientedDimensions(
-      baseProfile.canvasWidth,
-      baseProfile.canvasHeight,
-      orientation
-    );
+  const dimensions = getOrientedDimensions(
+    baseProfile.canvasWidth,
+    baseProfile.canvasHeight,
+    orientation
+  );
 
   return {
     ...baseProfile,
 
-    canvasWidth:
-      dimensions.width,
+    canvasWidth: dimensions.width,
 
-    canvasHeight:
-      dimensions.height,
+    canvasHeight: dimensions.height,
   };
 };
 
 /* ============================================================
    EXECUTION CONTEXT NORMALIZER
-
-   Backend may return:
-
-   {
-     rss: {
-       title: "...",
-       items: []
-     }
-   }
-
-   OR:
-
-   [
-     {
-       instanceKey: "rss",
-       result: {
-         title: "...",
-         items: []
-       }
-     }
-   ]
-
-   Liquid should receive:
-
-   {
-     rss: {
-       title: "...",
-       items: []
-     }
-   }
 ============================================================ */
 
 function normalizeExecutionContext(
@@ -262,14 +207,10 @@ function normalizeExecutionContext(
      Already an object
   ---------------------------------------------------------- */
 
-  if (
-    !Array.isArray(raw) &&
-    typeof raw === "object"
-  ) {
+  if (!Array.isArray(raw) && typeof raw === "object") {
     if (
       raw.data &&
-      typeof raw.data ===
-        "object" &&
+      typeof raw.data === "object" &&
       !Array.isArray(raw.data)
     ) {
       return raw.data;
@@ -277,17 +218,13 @@ function normalizeExecutionContext(
 
     if (
       raw.result &&
-      typeof raw.result ===
-        "object" &&
+      typeof raw.result === "object" &&
       !Array.isArray(raw.result)
     ) {
       if (
         raw.result.data &&
-        typeof raw.result.data ===
-          "object" &&
-        !Array.isArray(
-          raw.result.data
-        )
+        typeof raw.result.data === "object" &&
+        !Array.isArray(raw.result.data)
       ) {
         return raw.result.data;
       }
@@ -303,109 +240,78 @@ function normalizeExecutionContext(
   ---------------------------------------------------------- */
 
   if (Array.isArray(raw)) {
-    const context: Record<
-      string,
-      any
-    > = {};
+    const context: Record<string, any> = {};
 
-    raw.forEach(
-      (
-        item: any,
-        index: number
-      ) => {
-        if (!item) {
-          return;
-        }
-
-        const key =
-          item.instanceKey ??
-          item.connectorKey ??
-          item.key ??
-          item.connectorType;
-
-        let value =
-          item.result ??
-          item.data ??
-          item.response ??
-          item.executionResult;
-
-        if (
-          value &&
-          typeof value ===
-            "object" &&
-          !Array.isArray(value)
-        ) {
-          if (
-            value.data &&
-            typeof value.data ===
-              "object" &&
-            !Array.isArray(
-              value.data
-            )
-          ) {
-            value =
-              value.data;
-          } else if (
-            value.result &&
-            typeof value.result ===
-              "object" &&
-            !Array.isArray(
-              value.result
-            )
-          ) {
-            value =
-              value.result;
-          }
-        }
-
-        if (key) {
-          context[
-            normalizeInstanceKey(
-              String(key)
-            )
-          ] =
-            value ?? {};
-
-          return;
-        }
-
-        if (
-          typeof item ===
-            "object" &&
-          !Array.isArray(item)
-        ) {
-          const keys =
-            Object.keys(item);
-
-          const looksLikeContext =
-            keys.length > 0 &&
-            keys.some(
-              (itemKey) =>
-                item[itemKey] &&
-                typeof item[
-                  itemKey
-                ] ===
-                  "object"
-            );
-
-          if (
-            looksLikeContext
-          ) {
-            Object.assign(
-              context,
-              item
-            );
-
-            return;
-          }
-        }
-
-        console.log(
-          `⚠️ UNKNOWN EXECUTION ITEM ${index}:`,
-          item
-        );
+    raw.forEach((item: any, index: number) => {
+      if (!item) {
+        return;
       }
-    );
+
+      const key =
+        item.instanceKey ??
+        item.connectorKey ??
+        item.key ??
+        item.connectorType;
+
+      let value =
+        item.result ??
+        item.data ??
+        item.response ??
+        item.executionResult;
+
+      if (
+        value &&
+        typeof value === "object" &&
+        !Array.isArray(value)
+      ) {
+        if (
+          value.data &&
+          typeof value.data === "object" &&
+          !Array.isArray(value.data)
+        ) {
+          value = value.data;
+        } else if (
+          value.result &&
+          typeof value.result === "object" &&
+          !Array.isArray(value.result)
+        ) {
+          value = value.result;
+        }
+      }
+
+      if (key) {
+        context[normalizeInstanceKey(String(key))] =
+          value ?? {};
+
+        return;
+      }
+
+      if (
+        typeof item === "object" &&
+        !Array.isArray(item)
+      ) {
+        const keys = Object.keys(item);
+
+        const looksLikeContext =
+          keys.length > 0 &&
+          keys.some(
+            (itemKey) =>
+              item[itemKey] &&
+              typeof item[itemKey] === "object"
+          );
+
+        if (looksLikeContext) {
+          Object.assign(context, item);
+
+          return;
+        }
+      }
+
+      console.log(
+        `⚠️ UNKNOWN EXECUTION ITEM ${index}:`,
+        item
+      );
+    });
 
     return context;
   }
@@ -417,419 +323,297 @@ function normalizeExecutionContext(
    SCREEN
 ============================================================ */
 
-export default function PluginPlaygroundScreen({
+export default function PlaylistPlaygroundScreen({
   route,
 }: Props) {
-  const pluginId =
-    route?.params?.pluginId;
+  const pluginId = route?.params?.pluginId;
 
-  const playlistItemId =
-    route?.params?.playlistItemId;
+  const playlistItemId = route?.params?.playlistItemId;
 
-  const initialWidth =
-    route?.params?.width ||
-    800;
+  const initialWidth = route?.params?.width || 800;
 
-  const initialHeight =
-    route?.params?.height ||
-    480;
+  const initialHeight = route?.params?.height || 480;
 
   const {
     width: screenWidth,
     height: screenHeight,
   } = useWindowDimensions();
 
-  const engine = useMemo(
-    () => new Liquid(),
-    []
-  );
+  const engine = useMemo(() => new Liquid(), []);
 
   /* ==========================================================
      STATE
   ========================================================== */
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [plugin, setPlugin] =
-    useState<Plugin | null>(
-      null
-    );
+  const [plugin, setPlugin] = useState<Plugin | null>(null);
 
-  const [connectors, setConnectors] =
-    useState<Connector[]>([]);
+  const [connectors, setConnectors] = useState<Connector[]>([]);
 
   const [
     playgroundSessionId,
     setPlaygroundSessionId,
-  ] = useState<
-    string | null
-  >(null);
+  ] = useState<string | null>(null);
 
   const [
     playgroundInstances,
     setPlaygroundInstances,
-  ] = useState<
-    PluginInstance[]
-  >([]);
+  ] = useState<PluginInstance[]>([]);
 
-  /*
-   * IMPORTANT:
-   *
-   * Do not type this as PlaygroundExecution[].
-   * Your real response is the Liquid data object.
-   */
   const [
     playgroundExecutionData,
     setPlaygroundExecutionData,
   ] = useState<any>(null);
 
-  const [markup, setMarkup] =
-    useState("");
+  const [markup, setMarkup] = useState("");
 
   const [epuiTree, setEpuiTree] =
-    useState<EpNode | null>(
-      null
+    useState<EpNode | null>(null);
+
+  const [compileError, setCompileError] =
+    useState<string | null>(null);
+
+  const [openInstanceId, setOpenInstanceId] =
+    useState<string | null>(null);
+
+  const [orientation, setOrientation] =
+    useState<Orientation>(
+      getDefaultOrientation(
+        initialWidth,
+        initialHeight
+      )
     );
 
-  const [
-    compileError,
-    setCompileError,
-  ] = useState<
-    string | null
-  >(null);
+  const [deviceWidth, setDeviceWidth] =
+    useState(initialWidth);
 
-  const [
-    openInstanceId,
-    setOpenInstanceId,
-  ] = useState<
-    string | null
-  >(null);
+  const [deviceHeight, setDeviceHeight] =
+    useState(initialHeight);
 
-  const [
-    orientation,
-    setOrientation,
-  ] = useState<Orientation>(
-    getDefaultOrientation(
-      initialWidth,
-      initialHeight
-    )
-  );
+  const [isExecuting, setIsExecuting] =
+    useState(false);
 
-  const [
-    deviceWidth,
-    setDeviceWidth,
-  ] = useState(
-    initialWidth
-  );
+  const [hasChanges, setHasChanges] =
+    useState(false);
 
-  const [
-    deviceHeight,
-    setDeviceHeight,
-  ] = useState(
-    initialHeight
-  );
+  const [imageVersion, setImageVersion] =
+    useState(0);
 
-  const [
-    isExecuting,
-    setIsExecuting,
-  ] = useState(false);
-
-  const [
-    hasChanges,
-    setHasChanges,
-  ] = useState(false);
-
-  const [
-    imageVersion,
-    setImageVersion,
-  ] = useState(0);
-
-  const [
-    devices,
-    setDevices,
-  ] = useState<
-    DisplayInfo[]
-  >([]);
+  const [devices, setDevices] =
+    useState<DisplayInfo[]>([]);
 
   const [
     dataContextExpanded,
     setDataContextExpanded,
   ] = useState(false);
 
-  const mountedRef =
-    useRef(false);
+  const mountedRef = useRef(false);
 
-  const configTimers =
-    useRef<
-      Record<
-        string,
-        ReturnType<typeof setTimeout>
-      >
-    >({});
+  const configTimers = useRef<
+    Record<string, ReturnType<typeof setTimeout>>
+  >({});
 
-  const compileRequestRef =
-    useRef(0);
+  const compileRequestRef = useRef(0);
 
   /* ==========================================================
      DEVICE PROFILE
   ========================================================== */
 
-  const baseProfile =
-    useMemo<DeviceProfile>(() => {
-      const width =
-        deviceWidth;
+  const baseProfile = useMemo<DeviceProfile>(() => {
+    const width = deviceWidth;
+    const height = deviceHeight;
 
-      const height =
-        deviceHeight;
+    if (
+      (width === 1200 && height === 1600) ||
+      (width === 1600 && height === 1200)
+    ) {
+      return E6_13IN_1200x1600;
+    }
 
-      if (
-        (width === 1200 &&
-          height === 1600) ||
-        (width === 1600 &&
-          height === 1200)
-      ) {
-        return E6_13IN_1200x1600;
-      }
+    if (
+      (width === 800 && height === 480) ||
+      (width === 480 && height === 800)
+    ) {
+      return E6_73IN_800x480;
+    }
 
-      if (
-        (width === 800 &&
-          height === 480) ||
-        (width === 480 &&
-          height === 800)
-      ) {
-        return E6_73IN_800x480;
-      }
+    return DEFAULT_DEVICE_PROFILE;
+  }, [deviceWidth, deviceHeight]);
 
-      return DEFAULT_DEVICE_PROFILE;
-    }, [
-      deviceWidth,
-      deviceHeight,
-    ]);
-
-  const profile =
-    useMemo(
-      () =>
-        getOrientedProfile(
-          baseProfile,
-          orientation
-        ),
-      [
+  const profile = useMemo(
+    () =>
+      getOrientedProfile(
         baseProfile,
-        orientation,
-      ]
-    );
+        orientation
+      ),
+    [baseProfile, orientation]
+  );
 
-  const orientedDevice =
-    useMemo(
-      () =>
-        getOrientedDimensions(
-          deviceWidth,
-          deviceHeight,
-          orientation
-        ),
-      [
+  const orientedDevice = useMemo(
+    () =>
+      getOrientedDimensions(
         deviceWidth,
         deviceHeight,
-        orientation,
-      ]
-    );
+        orientation
+      ),
+    [
+      deviceWidth,
+      deviceHeight,
+      orientation,
+    ]
+  );
 
   /* ==========================================================
      PREVIEW SCALE
   ========================================================== */
 
-  const previewWidth =
-    Math.max(
-      screenWidth - 24,
-      100
-    );
+  const previewWidth = Math.max(
+    screenWidth - 24,
+    100
+  );
 
-  const previewHeight =
-    Math.max(
-      screenHeight * 0.52,
-      150
-    );
+  const previewHeight = Math.max(
+    screenHeight * 0.52,
+    150
+  );
 
-  const scale =
-    Math.min(
-      previewWidth /
-        orientedDevice.width,
-
-      previewHeight /
-        orientedDevice.height,
-
-      1
-    );
+  const scale = Math.min(
+    previewWidth / orientedDevice.width,
+    previewHeight / orientedDevice.height,
+    1
+  );
 
   const scaledWidth =
-    orientedDevice.width *
-    scale;
+    orientedDevice.width * scale;
 
   const scaledHeight =
-    orientedDevice.height *
-    scale;
+    orientedDevice.height * scale;
 
   /* ==========================================================
      CREATE SESSION
   ========================================================== */
 
   const createPlaygroundSession =
-    useCallback(
-      async () => {
-        const response =
-          await api.post<PlaygroundSessionResponse>(
-            `/playground/${pluginId}/create-session`
-          );
-
-        console.log(
-          "========== CREATED SESSION =========="
+    useCallback(async () => {
+      const response =
+        await api.post<PlaygroundSessionResponse>(
+          `/playground/${pluginId}/create-session`
         );
 
-        console.log(
-          response.data
-        );
+      console.log(
+        "========== CREATED SESSION =========="
+      );
 
-        return response.data
-          .session;
-      },
-      [pluginId]
-    );
+      console.log(response.data);
+
+      return response.data.session;
+    }, [pluginId]);
 
   /* ==========================================================
      REFRESH SESSION
   ========================================================== */
 
   const refreshPlaygroundSession =
-    useCallback(
-      async () => {
-        const response =
-          await api.get<{
-            id: string;
-          }>(
-            `/playground/${pluginId}/refresh`
-          );
-
-        console.log(
-          "========== REFRESHED SESSION =========="
+    useCallback(async () => {
+      const response =
+        await api.get<{ id: string }>(
+          `/playground/${pluginId}/refresh`
         );
 
-        console.log(
-          response.data
-        );
+      console.log(
+        "========== REFRESHED SESSION =========="
+      );
 
-        return response.data;
-      },
-      [pluginId]
-    );
+      console.log(response.data);
+
+      return response.data;
+    }, [pluginId]);
 
   /* ==========================================================
      LOAD CONNECTORS
   ========================================================== */
 
   const loadPlaygroundConnectors =
-    useCallback(
-      async (
-        sessionId: string
-      ) => {
-        const response =
-          await api.get<
-            PluginInstance[]
-          >(
-            `/playground/${sessionId}/connectors`
-          );
-
-        const list =
-          response.data ?? [];
-
-        console.log(
-          "========== PLAYGROUND CONNECTORS =========="
+    useCallback(async (sessionId: string) => {
+      const response =
+        await api.get<PluginInstance[]>(
+          `/playground/${sessionId}/connectors`
         );
 
-        console.log(
-          JSON.stringify(
-            list,
-            null,
-            2
-          )
-        );
+      const list = response.data ?? [];
 
-        setPlaygroundInstances(
-          list
-        );
+      console.log(
+        "========== PLAYGROUND CONNECTORS =========="
+      );
 
-        return list;
-      },
-      []
-    );
+      console.log(
+        JSON.stringify(list, null, 2)
+      );
+
+      setPlaygroundInstances(list);
+
+      return list;
+    }, []);
 
   /* ==========================================================
      LOAD EXECUTION
   ========================================================== */
 
   const loadExecution =
-    useCallback(
-      async (
-        sessionId: string
-      ) => {
-        const response =
-          await api.get<any>(
-            `/execution/playground/${sessionId}`
-          );
-
-        const executionData =
-          response.data;
-
-        console.log(
-          "================================="
+    useCallback(async (sessionId: string) => {
+      const response =
+        await api.get<any>(
+          `/execution/playground/${sessionId}`
         );
 
-        console.log(
-          "EXECUTION SESSION:",
-          sessionId
-        );
+      const executionData = response.data;
 
-        console.log(
-          "PLAYGROUND EXECUTION:"
-        );
+      console.log(
+        "================================="
+      );
 
-        console.log(
-          JSON.stringify(
-            executionData,
-            null,
-            2
-          )
-        );
+      console.log(
+        "EXECUTION SESSION:",
+        sessionId
+      );
 
-        console.log(
-          "================================="
-        );
+      console.log(
+        "PLAYGROUND EXECUTION:"
+      );
 
-        setPlaygroundExecutionData(
-          executionData
-        );
+      console.log(
+        JSON.stringify(
+          executionData,
+          null,
+          2
+        )
+      );
 
-        return executionData;
-      },
-      []
-    );
+      console.log(
+        "================================="
+      );
+
+      setPlaygroundExecutionData(
+        executionData
+      );
+
+      return executionData;
+    }, []);
 
   /* ==========================================================
      LOAD DEVICES
   ========================================================== */
 
-  const loadDevices =
-    useCallback(async () => {
+  const loadDevices = useCallback(
+    async () => {
       try {
         const response =
-          await api.get<
-            DisplayInfo[]
-          >(
+          await api.get<DisplayInfo[]>(
             "/device/display-infos"
           );
 
-        const list =
-          response.data ?? [];
+        const list = response.data ?? [];
 
         console.log(
           "========== DEVICES =========="
@@ -845,17 +629,12 @@ export default function PluginPlaygroundScreen({
 
         setDevices(list);
 
-        /*
-         * Do not override an explicitly supplied
-         * route resolution.
-         */
         if (
           list.length > 0 &&
           !route?.params?.width &&
           !route?.params?.height
         ) {
-          const first =
-            list[0];
+          const first = list[0];
 
           setDeviceWidth(
             first.displayResolutionWidth
@@ -878,10 +657,12 @@ export default function PluginPlaygroundScreen({
           error
         );
       }
-    }, [
+    },
+    [
       route?.params?.width,
       route?.params?.height,
-    ]);
+    ]
+  );
 
   /* ==========================================================
      LOAD PLUGIN
@@ -903,14 +684,10 @@ export default function PluginPlaygroundScreen({
         response.data
       );
 
-      setPlugin(
-        response.data
-      );
+      setPlugin(response.data);
 
       setMarkup(
-        response.data
-          ?.pluginCode ??
-          ""
+        response.data?.pluginCode ?? ""
       );
     }, [pluginId]);
 
@@ -921,9 +698,7 @@ export default function PluginPlaygroundScreen({
   const loadConnectorTypes =
     useCallback(async () => {
       const response =
-        await api.get<
-          Connector[]
-        >(
+        await api.get<Connector[]>(
           "/test/data-connectors/connectors"
         );
 
@@ -938,16 +713,13 @@ export default function PluginPlaygroundScreen({
 
   const loadPlaylistPlayground =
     useCallback(
-      async (
-        itemId: string
-      ) => {
+      async (itemId: string) => {
         const response =
           await api.get<PlaylistPlaygroundResponse>(
             `/playlist/${itemId}/get-playground`
           );
 
-        const data =
-          response.data;
+        const data = response.data;
 
         console.log(
           "========== PLAYLIST PLAYGROUND =========="
@@ -966,21 +738,10 @@ export default function PluginPlaygroundScreen({
         );
 
         setPlaygroundInstances(
-          data.playgroundConnectorConfigs ??
-            []
+          data.playgroundConnectorConfigs ?? []
         );
 
-        /*
-         * IMPORTANT:
-         *
-         * Do NOT use oauthTokens as the
-         * Liquid data context.
-         *
-         * Fetch actual execution data.
-         */
-        setPlaygroundExecutionData(
-          null
-        );
+        setPlaygroundExecutionData(null);
 
         await loadExecution(
           data.playgroundSessionId
@@ -1000,75 +761,60 @@ export default function PluginPlaygroundScreen({
       return;
     }
 
-    if (
-      mountedRef.current
-    ) {
+    if (mountedRef.current) {
       return;
     }
 
-    mountedRef.current =
-      true;
+    mountedRef.current = true;
 
-    const load =
-      async () => {
-        try {
-          setLoading(true);
+    const load = async () => {
+      try {
+        setLoading(true);
 
-          await Promise.all([
-            loadPlugin(),
-            loadConnectorTypes(),
-            loadDevices(),
-          ]);
+        await Promise.all([
+          loadPlugin(),
+          loadConnectorTypes(),
+          loadDevices(),
+        ]);
 
-          if (
+        if (playlistItemId) {
+          await loadPlaylistPlayground(
             playlistItemId
-          ) {
-            await loadPlaylistPlayground(
-              playlistItemId
-            );
-          } else {
-            const session =
-              await createPlaygroundSession();
+          );
+        } else {
+          const session =
+            await createPlaygroundSession();
 
-            setPlaygroundSessionId(
-              session.id
-            );
-
-            await loadPlaygroundConnectors(
-              session.id
-            );
-
-            await loadExecution(
-              session.id
-            );
-
-            /*
-             * Keep Execute disabled until a connector
-             * actually changes.
-             */
-            setHasChanges(
-              false
-            );
-          }
-        } catch (error: any) {
-          console.log(
-            "PLUGIN LOAD ERROR:",
-            error?.response
-              ?.data ??
-              error
+          setPlaygroundSessionId(
+            session.id
           );
 
-          Alert.alert(
-            "Error",
-            error?.response
-              ?.data
-              ?.message ??
-              "Failed to load playground."
+          await loadPlaygroundConnectors(
+            session.id
           );
-        } finally {
-          setLoading(false);
+
+          await loadExecution(
+            session.id
+          );
+
+          setHasChanges(false);
         }
-      };
+      } catch (error: any) {
+        console.log(
+          "PLUGIN LOAD ERROR:",
+          error?.response?.data ??
+            error
+        );
+
+        Alert.alert(
+          "Error",
+          error?.response?.data?.message ??
+            "Failed to load playground."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
 
     load();
   }, [
@@ -1087,16 +833,13 @@ export default function PluginPlaygroundScreen({
      DATA CONTEXT
   ========================================================== */
 
-  const dataContext =
-    useMemo(
-      () =>
-        normalizeExecutionContext(
-          playgroundExecutionData
-        ),
-      [
-        playgroundExecutionData,
-      ]
-    );
+  const dataContext = useMemo(
+    () =>
+      normalizeExecutionContext(
+        playgroundExecutionData
+      ),
+    [playgroundExecutionData]
+  );
 
   /* ==========================================================
      DEBUG DATA
@@ -1117,9 +860,7 @@ export default function PluginPlaygroundScreen({
 
     console.log(
       "LIQUID KEYS:",
-      Object.keys(
-        dataContext
-      )
+      Object.keys(dataContext)
     );
 
     console.log(
@@ -1129,8 +870,7 @@ export default function PluginPlaygroundScreen({
 
     console.log(
       "RSS ITEMS:",
-      dataContext?.rss
-        ?.items
+      dataContext?.rss?.items
     );
 
     console.log(
@@ -1151,167 +891,154 @@ export default function PluginPlaygroundScreen({
     const requestId =
       ++compileRequestRef.current;
 
-    let cancelled =
-      false;
+    let cancelled = false;
 
-    const compile =
-      async () => {
-        try {
-          setCompileError(
-            null
+    const compile = async () => {
+      try {
+        setCompileError(null);
+
+        console.log(
+          "========================================"
+        );
+
+        console.log(
+          "🔥 START MOBILE LIQUID COMPILE"
+        );
+
+        console.log(
+          "========================================"
+        );
+
+        const html =
+          await engine.parseAndRender(
+            markup,
+            dataContext
           );
 
-          console.log(
-            "========================================"
-          );
-
-          console.log(
-            "🔥 START MOBILE LIQUID COMPILE"
-          );
-
-          console.log(
-            "========================================"
-          );
-
-          const html =
-            await engine.parseAndRender(
-              markup,
-              dataContext
-            );
-
-          if (
-            cancelled ||
-            requestId !==
-              compileRequestRef.current
-          ) {
-            return;
-          }
-
-          console.log(
-            "========== MOBILE LIQUID HTML =========="
-          );
-
-          console.log(
-            html
-          );
-
-          const rawTree =
-            compileLTHtml(
-              html
-            );
-
-          if (
-            cancelled ||
-            requestId !==
-              compileRequestRef.current
-          ) {
-            return;
-          }
-
-          console.log(
-            "========== MOBILE RAW EP TREE =========="
-          );
-
-          console.log(
-            JSON.stringify(
-              rawTree,
-              null,
-              2
-            )
-          );
-
-          const resolvedTree =
-            resolveLayout(
-              rawTree,
-              profile
-            );
-            console.log(
-  "========== COLUMN DEBUG =========="
-);
-
-const resolvedRoot =
-  resolvedTree as any;
-
-console.log(
-  "ROOT TYPE:",
-  resolvedRoot?.type
-);
-
-const columnsNode =
-  resolvedRoot?.children?.find(
-    (child: any) =>
-      child?.type === "columns"
-  );
-
-console.log(
-  "COLUMNS NODE:",
-  JSON.stringify(
-    columnsNode,
-    null,
-    2
-  )
-);
-
-console.log(
-  "COLUMN COUNT:",
-  columnsNode?.columns?.length
-);
-
-console.log(
-  "ITEM COUNT PER COLUMN:",
-  columnsNode?.columns?.map(
-    (column: any[]) =>
-      column?.length
-  )
-);
-
-console.log(
-  "================================="
-);
-
-          if (
-            cancelled ||
-            requestId !==
-              compileRequestRef.current
-          ) {
-            return;
-          }
-
-          console.log(
-            "========== MOBILE RESOLVED EP TREE =========="
-          );
-
-          console.log(
-            JSON.stringify(
-              resolvedTree,
-              null,
-              2
-            )
-          );
-
-          setEpuiTree(
-            resolvedTree
-          );
-        } catch (
-          error: any
+        if (
+          cancelled ||
+          requestId !==
+            compileRequestRef.current
         ) {
-          console.log(
-            "LIQUID / COMPILE ERROR:",
-            error
+          return;
+        }
+
+        console.log(
+          "========== MOBILE LIQUID HTML =========="
+        );
+
+        console.log(html);
+
+        const rawTree =
+          compileLTHtml(html);
+
+        if (
+          cancelled ||
+          requestId !==
+            compileRequestRef.current
+        ) {
+          return;
+        }
+
+        console.log(
+          "========== MOBILE RAW EP TREE =========="
+        );
+
+        console.log(
+          JSON.stringify(
+            rawTree,
+            null,
+            2
+          )
+        );
+
+        const resolvedTree =
+          resolveLayout(
+            rawTree,
+            profile
           );
 
-          if (!cancelled) {
-            setCompileError(
-              error?.message ??
-                "Failed to compile."
-            );
+        console.log(
+          "========== COLUMN DEBUG =========="
+        );
 
-            setEpuiTree(
-              null
-            );
-          }
+        const resolvedRoot =
+          resolvedTree as any;
+
+        console.log(
+          "ROOT TYPE:",
+          resolvedRoot?.type
+        );
+
+        const columnsNode =
+          resolvedRoot?.children?.find(
+            (child: any) =>
+              child?.type === "columns"
+          );
+
+        console.log(
+          "COLUMNS NODE:",
+          JSON.stringify(
+            columnsNode,
+            null,
+            2
+          )
+        );
+
+        console.log(
+          "COLUMN COUNT:",
+          columnsNode?.columns?.length
+        );
+
+        console.log(
+          "ITEM COUNT PER COLUMN:",
+          columnsNode?.columns?.map(
+            (column: any[]) =>
+              column?.length
+          )
+        );
+
+        console.log(
+          "================================="
+        );
+
+        if (
+          cancelled ||
+          requestId !==
+            compileRequestRef.current
+        ) {
+          return;
         }
-      };
+
+        console.log(
+          "========== MOBILE RESOLVED EP TREE =========="
+        );
+
+        console.log(
+          JSON.stringify(
+            resolvedTree,
+            null,
+            2
+          )
+        );
+
+        setEpuiTree(resolvedTree);
+      } catch (error: any) {
+        console.log(
+          "LIQUID / COMPILE ERROR:",
+          error
+        );
+
+        if (!cancelled) {
+          setCompileError(
+            error?.message ??
+              "Failed to compile."
+          );
+
+          setEpuiTree(null);
+        }
+      }
+    };
 
     compile();
 
@@ -1339,8 +1066,7 @@ console.log(
           (previous) =>
             previous.map(
               (item) =>
-                item.id ===
-                id
+                item.id === id
                   ? {
                       ...item,
                       config,
@@ -1349,31 +1075,18 @@ console.log(
             )
         );
 
-        setHasChanges(
-          true
-        );
+        setHasChanges(true);
 
-        /*
-         * Debounce backend PATCH.
-         */
         const oldTimer =
-          configTimers.current[
-            id
-          ];
+          configTimers.current[id];
 
         if (oldTimer) {
-          clearTimeout(
-            oldTimer
-          );
+          clearTimeout(oldTimer);
         }
 
-        configTimers.current[
-          id
-        ] = setTimeout(
-          async () => {
-            if (
-              !playgroundSessionId
-            ) {
+        configTimers.current[id] =
+          setTimeout(async () => {
+            if (!playgroundSessionId) {
               return;
             }
 
@@ -1389,31 +1102,23 @@ console.log(
                 "CONNECTOR UPDATED:",
                 id
               );
-            } catch (
-              error: any
-            ) {
+            } catch (error: any) {
               console.log(
                 "CONNECTOR UPDATE ERROR:",
-                error?.response
-                  ?.data ??
+                error?.response?.data ??
                   error
               );
 
               Alert.alert(
                 "Error",
-                error?.response
-                  ?.data
+                error?.response?.data
                   ?.message ??
                   "Failed to update connector."
               );
             }
-          },
-          400
-        );
+          }, 400);
       },
-      [
-        playgroundSessionId,
-      ]
+      [playgroundSessionId]
     );
 
   /* ==========================================================
@@ -1422,27 +1127,21 @@ console.log(
 
   const disconnect =
     useCallback(
-      async (
-        id: string
-      ) => {
+      async (id: string) => {
         setPlaygroundInstances(
           (previous) =>
             previous.map(
               (item) =>
-                item.id ===
-                id
+                item.id === id
                   ? {
                       ...item,
-                      oauthTokenId:
-                        null,
+                      oauthTokenId: null,
                     }
                   : item
             )
         );
 
-        setHasChanges(
-          true
-        );
+        setHasChanges(true);
       },
       []
     );
@@ -1471,9 +1170,7 @@ console.log(
               }
             );
 
-          if (
-            !response.data?.url
-          ) {
+          if (!response.data?.url) {
             throw new Error(
               "OAuth URL was not returned."
             );
@@ -1482,20 +1179,16 @@ console.log(
           await Linking.openURL(
             response.data.url
           );
-        } catch (
-          error: any
-        ) {
+        } catch (error: any) {
           console.log(
             "OAUTH ERROR:",
-            error?.response
-              ?.data ??
+            error?.response?.data ??
               error
           );
 
           Alert.alert(
             "OAuth failed",
-            error?.response
-              ?.data
+            error?.response?.data
               ?.message ??
               `Failed to connect ${provider}.`
           );
@@ -1523,9 +1216,7 @@ console.log(
           return;
         }
 
-        if (
-          !playgroundSessionId
-        ) {
+        if (!playgroundSessionId) {
           return;
         }
 
@@ -1546,16 +1237,11 @@ console.log(
           );
 
           setImageVersion(
-            (value) =>
-              value + 1
+            (value) => value + 1
           );
 
-          setHasChanges(
-            true
-          );
-        } catch (
-          error
-        ) {
+          setHasChanges(true);
+        } catch (error) {
           console.log(
             "OAUTH REFRESH ERROR:",
             error
@@ -1570,15 +1256,11 @@ console.log(
       );
 
     Linking.getInitialURL()
-      .then(
-        (url) => {
-          if (url) {
-            handleDeepLink({
-              url,
-            });
-          }
+      .then((url) => {
+        if (url) {
+          handleDeepLink({ url });
         }
-      )
+      })
       .catch(() => {});
 
     return () => {
@@ -1596,101 +1278,81 @@ console.log(
   ========================================================== */
 
   const execute =
-    useCallback(
-      async () => {
-        if (
-          !playgroundSessionId
-        ) {
-          return;
-        }
+    useCallback(async () => {
+      if (!playgroundSessionId) {
+        return;
+      }
 
-        try {
-          setIsExecuting(
-            true
-          );
+      try {
+        setIsExecuting(true);
 
-          console.log(
-            "================================="
-          );
+        console.log(
+          "================================="
+        );
 
-          console.log(
-            "EXECUTE - OLD SESSION:",
-            playgroundSessionId
-          );
+        console.log(
+          "EXECUTE - OLD SESSION:",
+          playgroundSessionId
+        );
 
-          /*
-           * Refresh may return a different
-           * session ID.
-           */
-          const refreshedSession =
-            await refreshPlaygroundSession();
+        const refreshedSession =
+          await refreshPlaygroundSession();
 
-          const sessionId =
-            refreshedSession.id;
+        const sessionId =
+          refreshedSession.id;
 
-          console.log(
-            "EXECUTE - NEW SESSION:",
-            sessionId
-          );
+        console.log(
+          "EXECUTE - NEW SESSION:",
+          sessionId
+        );
 
-          setPlaygroundSessionId(
-            sessionId
-          );
+        setPlaygroundSessionId(
+          sessionId
+        );
 
-          await loadPlaygroundConnectors(
-            sessionId
-          );
+        await loadPlaygroundConnectors(
+          sessionId
+        );
 
-          await loadExecution(
-            sessionId
-          );
+        await loadExecution(
+          sessionId
+        );
 
-          setImageVersion(
-            (value) =>
-              value + 1
-          );
+        setImageVersion(
+          (value) => value + 1
+        );
 
-          setHasChanges(
-            false
-          );
+        setHasChanges(false);
 
-          console.log(
-            "EXECUTE COMPLETE"
-          );
+        console.log(
+          "EXECUTE COMPLETE"
+        );
 
-          console.log(
-            "================================="
-          );
-        } catch (
-          error: any
-        ) {
-          console.log(
-            "EXECUTION ERROR:",
-            error?.response
-              ?.data ??
-              error
-          );
+        console.log(
+          "================================="
+        );
+      } catch (error: any) {
+        console.log(
+          "EXECUTION ERROR:",
+          error?.response?.data ??
+            error
+        );
 
-          Alert.alert(
-            "Execution failed",
-            error?.response
-              ?.data
-              ?.message ??
-              "Failed to execute playground."
-          );
-        } finally {
-          setIsExecuting(
-            false
-          );
-        }
-      },
-      [
-        playgroundSessionId,
-        refreshPlaygroundSession,
-        loadPlaygroundConnectors,
-        loadExecution,
-      ]
-    );
+        Alert.alert(
+          "Execution failed",
+          error?.response?.data
+            ?.message ??
+            "Failed to execute playground."
+        );
+      } finally {
+        setIsExecuting(false);
+      }
+    }, [
+      playgroundSessionId,
+      refreshPlaygroundSession,
+      loadPlaygroundConnectors,
+      loadExecution,
+    ]);
 
   /* ==========================================================
      ORIENTATION
@@ -1698,23 +1360,15 @@ console.log(
 
   const changeOrientation =
     useCallback(
-      (
-        next: Orientation
-      ) => {
-        if (
-          next ===
-          orientation
-        ) {
+      (next: Orientation) => {
+        if (next === orientation) {
           return;
         }
 
-        setOrientation(
-          next
-        );
+        setOrientation(next);
 
         setImageVersion(
-          (value) =>
-            value + 1
+          (value) => value + 1
         );
       },
       [orientation]
@@ -1726,22 +1380,16 @@ console.log(
 
   const changeDevice =
     useCallback(
-      (
-        selectedDevice: DisplayInfo
-      ) => {
+      (selectedDevice: DisplayInfo) => {
         const width =
           selectedDevice.displayResolutionWidth;
 
         const height =
           selectedDevice.displayResolutionHeight;
 
-        setDeviceWidth(
-          width
-        );
+        setDeviceWidth(width);
 
-        setDeviceHeight(
-          height
-        );
+        setDeviceHeight(height);
 
         setOrientation(
           getDefaultOrientation(
@@ -1751,42 +1399,26 @@ console.log(
         );
 
         setImageVersion(
-          (value) =>
-            value + 1
+          (value) => value + 1
         );
       },
       []
     );
-
-  /* ==========================================================
-     RENDER EP NODE
-
-     IMPORTANT:
-     Native View/Text are used for the layout.
-
-     Normal images:
-       -> EpImage
-
-     Overlay images:
-       -> native Image with fixed size
-  ========================================================== */
 const renderEpNode = useCallback(
   (
     node: EpNode,
     key?: string | number,
-    isOverlay: boolean = false
+    isOverlay: boolean = false,
+    inheritedHAlign?: "left" | "center" | "right",
+    inheritedVAlign?: "top" | "center" | "bottom"
   ): React.ReactNode => {
-    const n = node as any;
-
-    if (!n) {
+    if (!node) {
       return null;
     }
 
-    switch (n.type) {
-      /* =====================================================
-         SEGMENT
-      ===================================================== */
+    const n = node as any;
 
+    switch (n.type) {
       case "segment":
         return (
           <View
@@ -1794,31 +1426,22 @@ const renderEpNode = useCallback(
             style={{
               width: orientedDevice.width,
               height: orientedDevice.height,
-
-              position: "relative",
-
-              backgroundColor: "#ffffff",
-
               overflow: "hidden",
+              backgroundColor: "#ffffff",
             }}
           >
             {(n.children ?? []).map(
-              (
-                child: EpNode,
-                index: number
-              ) =>
+              (child: EpNode, index: number) =>
                 renderEpNode(
                   child,
                   `${key}-segment-${index}`,
-                  isOverlay
+                  isOverlay,
+                  inheritedHAlign,
+                  inheritedVAlign
                 )
             )}
           </View>
         );
-
-      /* =====================================================
-         SEGMENT VIEW
-      ===================================================== */
 
       case "segment-view":
         return (
@@ -1826,166 +1449,74 @@ const renderEpNode = useCallback(
             key={key}
             style={{
               position: "absolute",
-
-              left:
-                n.regionBox?.offsetX ?? 0,
-
-              top:
-                n.regionBox?.offsetY ?? 0,
-
+              left: n.regionBox?.offsetX ?? 0,
+              top: n.regionBox?.offsetY ?? 0,
               width:
                 n.regionBox?.width ??
                 orientedDevice.width,
-
               height:
                 n.regionBox?.height ??
                 orientedDevice.height,
-
               overflow: "hidden",
             }}
           >
             {(n.children ?? []).map(
-              (
-                child: EpNode,
-                index: number
-              ) =>
+              (child: EpNode, index: number) =>
                 renderEpNode(
                   child,
-                  `${key}-view-${index}`,
-                  isOverlay
+                  `${key}-segment-view-${index}`,
+                  isOverlay,
+                  inheritedHAlign,
+                  inheritedVAlign
                 )
             )}
           </View>
         );
-
-      /* =====================================================
-         CANVAS
-      ===================================================== */
-
       case "canvas":
         return (
-          <View
+          <EpCanvas
             key={key}
-            style={{
-              width: orientedDevice.width,
-              height: orientedDevice.height,
-
-              position: "relative",
-
-              backgroundColor: "#ffffff",
-
-              overflow: "hidden",
-            }}
-          >
-            {/* MAIN CONTENT */}
-
-            <View
-              style={{
-                flex: 1,
-
-                width: "100%",
-                height: "100%",
-
-                overflow: "hidden",
-              }}
-            >
-              {(n.children ?? []).map(
-                (
-                  child: EpNode,
-                  index: number
-                ) =>
-                  renderEpNode(
-                    child,
-                    `${key}-canvas-${index}`,
-                    false
+            full={n.full}
+            profile={profile}
+            overlay={
+              Array.isArray(n.overlay)
+                ? n.overlay.map(
+                    (child: EpNode, index: number) =>
+                      renderEpNode(
+                        child,
+                        `${key}-overlay-${index}`,
+                        true
+                      )
                   )
-              )}
-            </View>
-
-            {/* OVERLAY */}
-
-            {(n.overlay ?? []).length >
-              0 && (
-              <View
-                pointerEvents="none"
-                style={{
-                  position: "absolute",
-
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-
-                  minHeight: 60,
-
-                  alignItems:
-                    "flex-end",
-
-                  justifyContent:
-                    "flex-end",
-
-                  paddingRight: 20,
-                  paddingBottom: 10,
-
-                  zIndex: 999,
-
-                  elevation: 999,
-                }}
-              >
-                {(n.overlay ?? []).map(
-                  (
-                    child: EpNode,
-                    index: number
-                  ) =>
-                    renderEpNode(
-                      child,
-                      `${key}-overlay-${index}`,
-                      true
-                    )
-                )}
-              </View>
+                : undefined
+            }
+          >
+            {(n.children ?? []).map(
+              (child: EpNode, index: number) =>
+                renderEpNode(
+                  child,
+                  `${key}-canvas-${index}`,
+                  false
+                )
             )}
-          </View>
+          </EpCanvas>
         );
-
-      /* =====================================================
-         ROW
-      ===================================================== */
 
       case "row":
         return (
-          <View
-            key={key}
-            style={{
-              flex: 1,
-
-              width: "100%",
-
-              flexDirection: "column",
-
-              minWidth: 0,
-              minHeight: 0,
-
-              overflow: "hidden",
-            }}
-          >
+          <EpRow key={key}>
             {(n.children ?? []).map(
-              (
-                child: EpNode,
-                index: number
-              ) =>
+              (child: EpNode, index: number) =>
                 renderEpNode(
                   child,
                   `${key}-row-${index}`,
-                  isOverlay
+                  isOverlay,
+                  inheritedHAlign,
+                  inheritedVAlign
                 )
             )}
-          </View>
+          </EpRow>
         );
-
-      /* =====================================================
-         COLUMNS
-      ===================================================== */
-
       case "columns": {
         const columns: EpNode[][] =
           Array.isArray(n.columns)
@@ -1997,47 +1528,17 @@ const renderEpNode = useCallback(
         }
 
         return (
-          <View
+          <EpColumns
             key={key}
-            style={{
-              flex: 1,
-
-              width: "100%",
-
-              flexDirection: "row",
-
-              minWidth: 0,
-              minHeight: 0,
-
-              overflow: "hidden",
-            }}
+            columns={columns.length}
           >
             {columns.map(
               (
                 column: EpNode[],
                 columnIndex: number
               ) => (
-                <View
+                <EpColumn
                   key={`${key}-column-${columnIndex}`}
-                  style={{
-                    /*
-                     * Every column gets an equal
-                     * share unless your resolver
-                     * later provides a weight.
-                     */
-                    flex: 1,
-
-                    minWidth: 0,
-                    minHeight: 0,
-
-                    height: "100%",
-
-                    flexDirection:
-                      "column",
-
-                    overflow:
-                      "hidden",
-                  }}
                 >
                   {column.map(
                     (
@@ -2047,394 +1548,168 @@ const renderEpNode = useCallback(
                       renderEpNode(
                         child,
                         `${key}-column-${columnIndex}-${childIndex}`,
-                        isOverlay
+                        isOverlay,
+                        inheritedHAlign,
+                        inheritedVAlign
                       )
                   )}
-                </View>
+                </EpColumn>
               )
             )}
-          </View>
+          </EpColumns>
         );
       }
-
-      /* =====================================================
-         COLUMN
-      ===================================================== */
-
       case "column":
         return (
-          <View
-            key={key}
-            style={{
-              flex: 1,
-
-              width: "100%",
-              height: "100%",
-
-              minWidth: 0,
-              minHeight: 0,
-
-              flexDirection:
-                "column",
-
-              overflow: "hidden",
-            }}
-          >
+          <EpColumn key={key}>
             {(n.children ?? []).map(
-              (
-                child: EpNode,
-                index: number
-              ) =>
+              (child: EpNode, index: number) =>
                 renderEpNode(
                   child,
                   `${key}-column-${index}`,
-                  isOverlay
+                  isOverlay,
+                  inheritedHAlign,
+                  inheritedVAlign
                 )
             )}
-          </View>
+          </EpColumn>
         );
 
-      /* =====================================================
-         BLOCK
-      ===================================================== */
-
       case "block": {
-        /*
-         * width from resolveLayout is a WEIGHT,
-         * not a pixel width.
-         */
-        const blockWeight =
-          typeof n.width === "number" &&
-          n.width > 0
-            ? n.width
-            : 1;
+        const blockHAlign =
+          n.hAlign ?? inheritedHAlign ?? "left";
+
+        const blockVAlign =
+          n.vAlign ?? inheritedVAlign ?? "top";
 
         return (
-          <View
+          <EpBlock
             key={key}
-            style={{
-              /*
-               * Overlay block should only consume
-               * its content size.
-               */
-              flex: isOverlay
-                ? 0
-                : blockWeight,
-
-              width: "100%",
-
-              minWidth: 0,
-              minHeight: 0,
-
-              flexDirection:
-                "column",
-
-              alignSelf:
-                isOverlay
-                  ? "flex-end"
-                  : "stretch",
-
-              justifyContent:
-                n.vAlign === "center"
-                  ? "center"
-                  : "flex-start",
-
-              alignItems:
-                n.hAlign === "center"
-                  ? "center"
-                  : "stretch",
-
-              padding:
-                isOverlay
-                  ? 0
-                  : n.full
-                  ? 0
-                  : 12,
-
-              borderWidth:
-                n.border &&
-                !isOverlay
-                  ? 1
-                  : 0,
-
-              borderColor:
-                "#000000",
-
-              overflow:
-                "hidden",
-
-              /*
-               * VERY IMPORTANT.
-               */
-              flexGrow:
-                isOverlay
-                  ? 0
-                  : blockWeight,
-
-              flexShrink: 1,
-
-              flexBasis:
-                isOverlay
-                  ? "auto"
-                  : 0,
-            }}
+            full={n.full}
+            border={n.border}
+            hAlign={blockHAlign}
+            vAlign={blockVAlign}
           >
             {(n.children ?? []).map(
-              (
-                child: EpNode,
-                index: number
-              ) =>
+              (child: EpNode, index: number) =>
                 renderEpNode(
                   child,
                   `${key}-block-${index}`,
-                  isOverlay
+                  isOverlay,
+                  blockHAlign,
+                  blockVAlign
                 )
             )}
-          </View>
+          </EpBlock>
         );
       }
-
-      /* =====================================================
-         TEXT
-      ===================================================== */
 
       case "text": {
-        const fontSize =
-          n.size === "large"
-            ? profile.textSizes.large
-            : n.size === "small"
-            ? profile.textSizes.small
-            : profile.textSizes.medium;
+        const effectiveHAlign =
+          n.hAlign ??
+          n.align ??
+          inheritedHAlign ??
+          "left";
+
+        const effectiveVAlign =
+          n.vAlign ??
+          inheritedVAlign ??
+          "top";
+
+        const align =
+          effectiveHAlign === "center"
+            ? "center"
+            : effectiveHAlign === "right"
+              ? "right"
+              : "left";
+
+        const vAlign =
+          effectiveVAlign === "center"
+            ? "center"
+            : undefined;
 
         return (
-          <Text
+          <EpText
             key={key}
-            style={{
-              color: "#000000",
-
-              fontSize,
-
-              lineHeight:
-                profile.lineHeight,
-
-              fontWeight: "400",
-
-              flexShrink: 1,
-
-              width: "100%",
-
-              textAlign:
-                n.align === "center"
-                  ? "center"
-                  : "left",
-
-              includeFontPadding: true,
-
-              /*
-               * Text should occupy only its
-               * natural height.
-               */
-              flexGrow: 0,
-              flexBasis: "auto",
-            }}
+            profile={profile}
+            size={
+              n.size === "large"
+                ? "large"
+                : n.size === "small"
+                  ? "small"
+                  : "medium"
+            }
+            align={align}
+            vAlign={vAlign}
+            width={
+              typeof n.width === "number"
+                ? n.width
+                : undefined
+            }
+            height={
+              typeof n.height === "number"
+                ? n.height
+                : undefined
+            }
           >
             {n.text ?? ""}
-          </Text>
+          </EpText>
         );
       }
+case "stat": {
+  const effectiveHAlign =
+    n.hAlign ??
+    inheritedHAlign ??
+    "right";
+                                                                                          
+// EpStat supports only "center" and "right".
+  const statAlign: "center" | "right" =
+    effectiveHAlign === "center"
+      ? "center"
+      : "right";
 
-      /* =====================================================
-         STAT
-      ===================================================== */
-
-      case "stat": {
-        const statSize =
-          n.size === "large"
-            ? profile.statSizes.large
-            : n.size === "small"
-            ? profile.statSizes.small
-            : profile.statSizes.medium;
-
-        return (
-          <Text
-            key={key}
-            style={{
-              color: "#000000",
-
-              fontSize:
-                statSize.fontSize,
-
-              lineHeight:
-                statSize.lineHeight,
-
-              fontWeight: "700",
-
-              textAlign:
-                n.hAlign === "center"
-                  ? "center"
-                  : "right",
-
-              includeFontPadding: true,
-
-              flexGrow: 0,
-
-              flexBasis: "auto",
-            }}
-          >
-            {n.value ?? ""}
-          </Text>
-        );
+  return (
+    <EpStat
+      key={key}
+      value={String(n.value ?? "")}
+      label={n.label}
+      size={
+        n.size === "small"
+          ? "small"
+          : n.size === "large"
+            ? "large"
+            : "medium"
       }
-
-      /* =====================================================
-         IMAGE
-      ===================================================== */
-
+      align={statAlign}
+      profile={profile}
+    />
+  );
+}
       case "image": {
         if (!n.src) {
           return null;
         }
 
-        const imageSrc =
-          appendCacheVersion(
-            n.src,
-            imageVersion
-          );
-
-        /*
-         * -----------------------------------------------
-         * OVERLAY IMAGE
-         * -----------------------------------------------
-         */
-
-        if (isOverlay) {
-          const width =
-            typeof n.width ===
-              "number" &&
-            n.width > 0
-              ? n.width
-              : 60;
-
-          const height =
-            typeof n.height ===
-              "number" &&
-            n.height > 0
-              ? n.height
-              : 60;
-
-          return (
-            <View
-              key={`${key}-overlay-image-${imageVersion}`}
-              style={{
-                width,
-                height,
-
-                alignItems:
-                  "center",
-
-                justifyContent:
-                  "center",
-
-                overflow:
-                  "hidden",
-              }}
-            >
-              <Image
-                source={{
-                  uri: imageSrc,
-                }}
-                style={{
-                  width,
-                  height,
-                }}
-                resizeMode="contain"
-              />
-            </View>
-          );
-        }
-
-        /*
-         * -----------------------------------------------
-         * NORMAL IMAGE
-         *
-         * Important:
-         *
-         * Image gets the remaining height after text.
-         * -----------------------------------------------
-         */
+        const imageSrc = appendCacheVersion(
+          n.src,
+          imageVersion
+        );
 
         return (
-          <View
+          <EpImage
             key={`${key}-image-${imageVersion}`}
-            style={{
-              flex: 1,
-
-              width: "100%",
-
-              minWidth: 0,
-              minHeight: 0,
-
-              marginTop: 8,
-
-              overflow: "hidden",
-
-              alignItems:
-                "stretch",
-
-              justifyContent:
-                "center",
-            }}
-          >
-            <Image
-              source={{
-                uri: imageSrc,
-              }}
-              style={{
-                width: "100%",
-                height: "100%",
-              }}
-              resizeMode={
-                n.fit === "contain"
-                  ? "contain"
-                  : "cover"
-              }
-            />
-
-            {n.overlayText ? (
-              <View
-                style={{
-                  position:
-                    "absolute",
-
-                  left: 0,
-                  right: 0,
-                  bottom: 8,
-
-                  paddingHorizontal: 8,
-
-                  alignItems:
-                    "center",
-                }}
-              >
-                <Text
-                  style={{
-                    color:
-                      "#000000",
-
-                    fontSize: 14,
-
-                    fontWeight:
-                      "700",
-
-                    textAlign:
-                      "center",
-                  }}
-                >
-                  {n.overlayText}
-                </Text>
-              </View>
-            ) : null}
-          </View>
+            src={imageSrc}
+            isOverlay={isOverlay}
+            overlayText={n.overlayText}
+            overlayImage={n.overlayImage}
+            width={n.width}
+            height={n.height}
+            fit={
+              n.fit ??
+              (isOverlay ? "contain" : "cover")
+            }
+            align={n.align ?? "center"}
+          />
         );
       }
 
@@ -2442,60 +1717,130 @@ const renderEpNode = useCallback(
          IFRAME
       ===================================================== */
 
-      case "iframe":
+      case "iframe": {
+        if (!n.src) {
+          console.warn(
+            "[PLAYLIST IFRAME] Missing src:",
+            n
+          );
+          return null;
+        }
+
+        const resolveDimension = (
+          value: any,
+          available: number,
+          fallback: number
+        ): number => {
+          if (
+            typeof value === "number" &&
+            value > 0
+          ) {
+            return value;
+          }
+
+          if (typeof value === "string") {
+            const trimmed = value.trim();
+
+            if (trimmed.endsWith("%")) {
+              const percentage =
+                parseFloat(trimmed) / 100;
+
+              if (
+                Number.isFinite(percentage) &&
+                percentage > 0
+              ) {
+                return Math.round(
+                  available * percentage
+                );
+              }
+            }
+
+            const numericValue =
+              parseFloat(trimmed);
+
+            if (
+              Number.isFinite(numericValue) &&
+              numericValue > 0
+            ) {
+              return numericValue;
+            }
+          }
+
+          return fallback;
+        };
+
+        const iframeWidth =
+          typeof n.regionBox?.width === "number" &&
+          n.regionBox.width > 0
+            ? n.regionBox.width
+            : resolveDimension(
+                n.width,
+                orientedDevice.width,
+                orientedDevice.width
+              );
+
+        const iframeHeight =
+          typeof n.regionBox?.height === "number" &&
+          n.regionBox.height > 0
+            ? n.regionBox.height
+            : resolveDimension(
+                n.height,
+                orientedDevice.height,
+                orientedDevice.height
+              );
+
         return (
           <View
             key={key}
+            pointerEvents="none"
             style={{
-              flex: 1,
-
-              width: "100%",
-
-              minWidth: 0,
-              minHeight: 0,
-
+              width: iframeWidth,
+              height: iframeHeight,
               overflow: "hidden",
-
-              backgroundColor:
-                "#ffffff",
             }}
           >
-            {n.src ? (
-              <WebView
-                source={{
-                  uri: n.src,
-                }}
-                style={{
-                  flex: 1,
-
-                  width: "100%",
-                  height: "100%",
-
-                  backgroundColor:
-                    "transparent",
-                }}
-                scrollEnabled={
-                  false
-                }
-                showsVerticalScrollIndicator={
-                  false
-                }
-                showsHorizontalScrollIndicator={
-                  false
-                }
-                javaScriptEnabled={
-                  true
-                }
-                domStorageEnabled={
-                  true
-                }
-                originWhitelist={[
-                  "*",
-                ]}
-              />
-            ) : null}
+            <WebView
+              source={{ uri: n.src }}
+              pointerEvents="none"
+              scrollEnabled={false}
+              nestedScrollEnabled={false}
+              bounces={false}
+              javaScriptEnabled
+              domStorageEnabled
+              originWhitelist={["*"]}
+              mixedContentMode="always"
+              allowsInlineMediaPlayback
+              mediaPlaybackRequiresUserAction={false}
+              showsVerticalScrollIndicator={false}
+              showsHorizontalScrollIndicator={false}
+              automaticallyAdjustContentInsets={false}
+              style={{
+                width: iframeWidth,
+                height: iframeHeight,
+                backgroundColor: "#ffffff",
+              }}
+              onLoad={() =>
+                console.log(
+                  "[PLAYLIST IFRAME] Loaded:",
+                  n.src
+                )
+              }
+              onError={(event) =>
+                console.warn(
+                  "[PLAYLIST IFRAME] Error:",
+                  event.nativeEvent
+                )
+              }
+              onHttpError={(event) =>
+                console.warn(
+                  "[PLAYLIST IFRAME] HTTP error:",
+                  event.nativeEvent
+                )
+              }
+            />
           </View>
         );
+      }
 
       /* =====================================================
          FOOTER
@@ -2505,42 +1850,28 @@ const renderEpNode = useCallback(
         return (
           <View
             key={key}
-            style={{
-              width: "100%",
-
-              minHeight: 20,
-
-              alignItems:
-                "center",
-
-              justifyContent:
-                "center",
-
-              backgroundColor:
-                "#ffffff",
-            }}
+            className="w-full min-h-[20px] items-center justify-center bg-white"
           >
             {(n.children ?? []).map(
-              (
-                child: EpNode,
-                index: number
-              ) =>
+              (child: EpNode, index: number) =>
                 renderEpNode(
                   child,
                   `${key}-footer-${index}`,
-                  isOverlay
+                  isOverlay,
+                  inheritedHAlign,
+                  inheritedVAlign
                 )
             )}
           </View>
         );
 
       /* =====================================================
-         UNKNOWN
+         UNKNOWN NODE
       ===================================================== */
 
       default:
-        console.log(
-          "UNKNOWN EP NODE:",
+        console.warn(
+          "[PLAYLIST EP] Unknown node:",
           n.type,
           n
         );
@@ -2554,6 +1885,7 @@ const renderEpNode = useCallback(
     imageVersion,
   ]
 );
+
   /* ==========================================================
      CLEANUP
   ========================================================== */
@@ -2562,13 +1894,9 @@ const renderEpNode = useCallback(
     return () => {
       Object.values(
         configTimers.current
-      ).forEach(
-        (timer) => {
-          clearTimeout(
-            timer
-          );
-        }
-      );
+      ).forEach((timer) => {
+        clearTimeout(timer);
+      });
     };
   }, []);
 
@@ -2576,25 +1904,12 @@ const renderEpNode = useCallback(
      LOADING
   ========================================================== */
 
-  if (
-    loading ||
-    !plugin
-  ) {
+  if (loading || !plugin) {
     return (
-      <View
-        style={
-          styles.loading
-        }
-      >
-        <ActivityIndicator
-          size="large"
-        />
+      <View className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator size="large" />
 
-        <Text
-          style={
-            styles.loadingText
-          }
-        >
+        <Text className="mt-3 text-[14px] text-[#666666]">
           Loading playground...
         </Text>
       </View>
@@ -2606,66 +1921,41 @@ const renderEpNode = useCallback(
   ========================================================== */
 
   return (
-    <View
-      style={
-        styles.container
-      }
-    >
+    <View className="flex-1 bg-[#f5f5f5]">
       {/* ====================================================
           HEADER
       ==================================================== */}
 
-      <View
-        style={
-          styles.header
-        }
-      >
-        <View
-          style={{
-            flex: 1,
-
-            paddingRight: 10,
-          }}
-        >
+      <View className="min-h-[64px] flex-row items-center border-b border-[#dddddd] bg-white px-4 py-2.5">
+        <View className="flex-1 pr-2.5">
           <Text
             numberOfLines={1}
-            style={
-              styles.title
-            }
+            className="text-[15px] font-semibold text-[#111111]"
           >
-            {
-              plugin.pluginName
-            }
+            {plugin.pluginName}
           </Text>
 
           <Text
             numberOfLines={1}
-            style={
-              styles.description
-            }
+            className="mt-[3px] text-[11px] text-[#777777]"
           >
-            {
-              plugin.pluginDescription ??
-              "No description"
-            }
+            {plugin.pluginDescription ??
+              "No description"}
           </Text>
         </View>
 
         <TouchableOpacity
-          onPress={
-            execute
-          }
+          onPress={execute}
           disabled={
             !hasChanges ||
             isExecuting
           }
-          style={[
-            styles.executeButton,
-
-            (!hasChanges ||
-              isExecuting) &&
-              styles.disabledButton,
-          ]}
+          className={`h-9 min-w-[80px] items-center justify-center rounded-[6px] bg-[#2563eb] px-3.5 ${
+            !hasChanges ||
+            isExecuting
+              ? "opacity-50"
+              : ""
+          }`}
         >
           {isExecuting ? (
             <ActivityIndicator
@@ -2673,11 +1963,7 @@ const renderEpNode = useCallback(
               size="small"
             />
           ) : (
-            <Text
-              style={
-                styles.executeText
-              }
-            >
+            <Text className="text-[12px] font-semibold text-white">
               Execute
             </Text>
           )}
@@ -2688,61 +1974,39 @@ const renderEpNode = useCallback(
           ORIENTATION
       ==================================================== */}
 
-      <View
-        style={
-          styles.orientationBar
-        }
-      >
+      <View className="min-h-[52px] flex-row items-center justify-between border-b border-[#dddddd] bg-white px-3">
         <View>
-          <Text
-            style={
-              styles.resolution
-            }
-          >
-            {
-              orientedDevice.width
-            }{" "}
-            ×{" "}
-            {
-              orientedDevice.height
-            }
+          <Text className="font-mono text-[11px] text-[#666666]">
+            {orientedDevice.width} ×{" "}
+            {orientedDevice.height}
           </Text>
 
-          <Text
-            style={
-              styles.orientationLabel
-            }
-          >
+          <Text className="mt-[3px] text-[9px] capitalize text-[#999999]">
             {orientation}
           </Text>
         </View>
 
-        <View
-          style={
-            styles.orientationButtons
-          }
-        >
+        <View className="flex-row overflow-hidden rounded-[6px] border border-[#dddddd]">
           <TouchableOpacity
             onPress={() =>
               changeOrientation(
                 "landscape"
               )
             }
-            style={[
-              styles.orientationButton,
-
+            className={`bg-white px-2.5 py-1.5 ${
               orientation ===
-                "landscape" &&
-                styles.selectedOrientation,
-            ]}
+              "landscape"
+                ? "bg-[#2563eb]"
+                : ""
+            }`}
           >
             <Text
-              style={
+              className={`text-[10px] ${
                 orientation ===
                 "landscape"
-                  ? styles.selectedOrientationText
-                  : styles.orientationText
-              }
+                  ? "font-semibold text-white"
+                  : "text-[#666666]"
+              }`}
             >
               Landscape
             </Text>
@@ -2754,21 +2018,20 @@ const renderEpNode = useCallback(
                 "portrait"
               )
             }
-            style={[
-              styles.orientationButton,
-
+            className={`bg-white px-2.5 py-1.5 ${
               orientation ===
-                "portrait" &&
-                styles.selectedOrientation,
-            ]}
+              "portrait"
+                ? "bg-[#2563eb]"
+                : ""
+            }`}
           >
             <Text
-              style={
+              className={`text-[10px] ${
                 orientation ===
                 "portrait"
-                  ? styles.selectedOrientationText
-                  : styles.orientationText
-              }
+                  ? "font-semibold text-white"
+                  : "text-[#666666]"
+              }`}
             >
               Portrait
             </Text>
@@ -2781,52 +2044,28 @@ const renderEpNode = useCallback(
       ==================================================== */}
 
       <ScrollView
-        style={{
-          flex: 1,
-        }}
-        contentContainerStyle={{
-          paddingBottom: 30,
-        }}
-        showsVerticalScrollIndicator={
-          false
-        }
+        className="flex-1"
+        contentContainerClassName="pb-[30px]"
+        showsVerticalScrollIndicator={false}
       >
         {/* ==================================================
             PREVIEW
         ================================================== */}
 
-        <View
-          style={
-            styles.previewContainer
-          }
-        >
-          <Text
-            style={
-              styles.previewTitle
-            }
-          >
+        <View className="min-h-[280px] items-center justify-center bg-[#e5e5e5] p-3">
+          <Text className="mb-2 self-start text-[13px] font-bold text-[#222222]">
             Preview
           </Text>
 
           <View
+            className="overflow-hidden rounded-[1px] bg-white"
             style={{
-              width:
-                scaledWidth,
-
-              height:
-                scaledHeight,
-
-              backgroundColor:
-                "#ffffff",
-
-              overflow:
-                "hidden",
-
-              borderRadius:
-                8,
+              width: scaledWidth,
+              height: scaledHeight,
             }}
           >
             <View
+              className="overflow-hidden bg-white"
               style={{
                 width:
                   orientedDevice.width,
@@ -2842,36 +2081,16 @@ const renderEpNode = useCallback(
 
                 transformOrigin:
                   "top left",
-
-                backgroundColor:
-                  "#ffffff",
-
-                overflow:
-                  "hidden",
               }}
             >
               {compileError ? (
-                <View
-                  style={
-                    styles.errorContainer
-                  }
-                >
-                  <Text
-                    style={
-                      styles.errorTitle
-                    }
-                  >
+                <View className="flex-1 items-center justify-center bg-[#fff5f5] p-5">
+                  <Text className="mb-1.5 text-[14px] font-semibold text-[#dc2626]">
                     Compile Error
                   </Text>
 
-                  <Text
-                    style={
-                      styles.errorText
-                    }
-                  >
-                    {
-                      compileError
-                    }
+                  <Text className="text-center text-[11px] text-[#ef4444]">
+                    {compileError}
                   </Text>
                 </View>
               ) : epuiTree ? (
@@ -2880,18 +2099,10 @@ const renderEpNode = useCallback(
                   "root"
                 )
               ) : (
-                <View
-                  style={
-                    styles.emptyPreview
-                  }
-                >
+                <View className="flex-1 items-center justify-center">
                   <ActivityIndicator />
 
-                  <Text
-                    style={
-                      styles.emptyText
-                    }
-                  >
+                  <Text className="mt-2 text-[12px] text-[#999999]">
                     Loading preview...
                   </Text>
                 </View>
@@ -2904,18 +2115,9 @@ const renderEpNode = useCallback(
             DEVICES
         ================================================== */}
 
-        {devices.length >
-          0 && (
-          <View
-            style={
-              styles.section
-            }
-          >
-            <Text
-              style={
-                styles.sectionTitle
-              }
-            >
+        {devices.length > 0 && (
+          <View className="border-b border-[#dddddd] bg-white p-3">
+            <Text className="mb-2.5 text-[12px] font-bold uppercase text-[#555555]">
               Devices
             </Text>
 
@@ -2925,49 +2127,29 @@ const renderEpNode = useCallback(
                 false
               }
             >
-              {devices.map(
-                (
-                  item
-                ) => (
-                  <TouchableOpacity
-                    key={
-                      item.displayId
-                    }
-                    onPress={() =>
-                      changeDevice(
-                        item
-                      )
-                    }
-                    style={
-                      styles.deviceButton
-                    }
-                  >
-                    <Text
-                      style={
-                        styles.deviceName
-                      }
-                    >
-                      {
-                        item.modelNo
-                      }
-                    </Text>
+              {devices.map((item) => (
+                <TouchableOpacity
+                  key={item.displayId}
+                  onPress={() =>
+                    changeDevice(item)
+                  }
+                  className="mr-2 rounded-[6px] border border-[#dddddd] bg-white px-3 py-2"
+                >
+                  <Text className="text-[11px] font-semibold text-[#222222]">
+                    {item.modelNo}
+                  </Text>
 
-                    <Text
-                      style={
-                        styles.deviceResolution
-                      }
-                    >
-                      {
-                        item.displayResolutionWidth
-                      }{" "}
-                      ×{" "}
-                      {
-                        item.displayResolutionHeight
-                      }
-                    </Text>
-                  </TouchableOpacity>
-                )
-              )}
+                  <Text className="mt-[3px] text-[10px] text-[#888888]">
+                    {
+                      item.displayResolutionWidth
+                    }{" "}
+                    ×{" "}
+                    {
+                      item.displayResolutionHeight
+                    }
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </ScrollView>
           </View>
         )}
@@ -2976,38 +2158,22 @@ const renderEpNode = useCallback(
             SETTINGS
         ================================================== */}
 
-        <View
-          style={
-            styles.settings
-          }
-        >
-          <Text
-            style={
-              styles.sectionTitle
-            }
-          >
+        <View className="bg-white p-3">
+          <Text className="mb-2.5 text-[12px] font-bold uppercase text-[#555555]">
             Settings
           </Text>
 
           {playgroundInstances.map(
-            (
-              instance
-            ) => (
+            (instance) => (
               <ConnectorCard
-                key={
-                  instance.id
-                }
+                key={instance.id}
                 mode="playground"
                 sessionId={
                   playgroundSessionId ??
                   ""
                 }
-                instance={
-                  instance
-                }
-                connectors={
-                  connectors
-                }
+                instance={instance}
+                connectors={connectors}
                 openInstanceId={
                   openInstanceId
                 }
@@ -3033,11 +2199,7 @@ const renderEpNode = useCallback(
 
           {playgroundInstances.length ===
             0 && (
-            <Text
-              style={
-                styles.emptySettings
-              }
-            >
+            <Text className="py-5 text-center text-[11px] text-[#999999]">
               No settings configured
             </Text>
           )}
@@ -3050,47 +2212,28 @@ const renderEpNode = useCallback(
         <Pressable
           onPress={() =>
             setDataContextExpanded(
-              (value) =>
-                !value
+              (value) => !value
             )
           }
-          style={
-            styles.dataContextHeader
-          }
+          className="min-h-[46px] flex-row items-center border-b border-t border-[#dddddd] bg-white px-3"
         >
-          <Text
-            style={
-              styles.sectionTitle
-            }
-          >
+          <Text className="mb-0 text-[12px] font-bold uppercase text-[#555555]">
             Data Context
           </Text>
 
-          <Text
-            style={
-              styles.expandIcon
-            }
-          >
-            {
-              dataContextExpanded
-                ? "▲"
-                : "▼"
-            }
+          <Text className="ml-auto text-[11px] text-[#777777]">
+            {dataContextExpanded
+              ? "▲"
+              : "▼"}
           </Text>
         </Pressable>
 
         {dataContextExpanded && (
           <ScrollView
             horizontal
-            style={
-              styles.dataContext
-            }
+            className="max-h-[350px] bg-[#111111] p-3"
           >
-            <Text
-              style={
-                styles.json
-              }
-            >
+            <Text className="font-mono text-[10px] text-[#eeeeee]">
               {JSON.stringify(
                 dataContext,
                 null,
@@ -3103,412 +2246,3 @@ const renderEpNode = useCallback(
     </View>
   );
 }
-
-/* ============================================================
-   STYLES
-============================================================ */
-
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor:
-        "#f5f5f5",
-    },
-
-    loading: {
-      flex: 1,
-      alignItems:
-        "center",
-      justifyContent:
-        "center",
-      backgroundColor:
-        "#ffffff",
-    },
-
-    loadingText: {
-      marginTop: 12,
-      color:
-        "#666666",
-      fontSize: 14,
-    },
-
-    header: {
-      minHeight: 64,
-
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-
-      backgroundColor:
-        "#ffffff",
-
-      borderBottomWidth: 1,
-      borderBottomColor:
-        "#dddddd",
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-    },
-
-    title: {
-      fontSize: 15,
-      fontWeight:
-        "600",
-      color:
-        "#111111",
-    },
-
-    description: {
-      marginTop: 3,
-      fontSize: 11,
-      color:
-        "#777777",
-    },
-
-    executeButton: {
-      minWidth: 80,
-      height: 36,
-
-      paddingHorizontal: 14,
-
-      borderRadius: 6,
-
-      backgroundColor:
-        "#2563eb",
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
-    },
-
-    disabledButton: {
-      opacity: 0.5,
-    },
-
-    executeText: {
-      color:
-        "#ffffff",
-
-      fontSize: 12,
-
-      fontWeight:
-        "600",
-    },
-
-    orientationBar: {
-      minHeight: 52,
-
-      paddingHorizontal: 12,
-
-      backgroundColor:
-        "#ffffff",
-
-      borderBottomWidth: 1,
-
-      borderBottomColor:
-        "#dddddd",
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "space-between",
-    },
-
-    resolution: {
-      color:
-        "#666666",
-
-      fontSize: 11,
-
-      fontFamily:
-        "monospace",
-    },
-
-    orientationLabel: {
-      marginTop: 3,
-
-      fontSize: 9,
-
-      color:
-        "#999999",
-
-      textTransform:
-        "capitalize",
-    },
-
-    orientationButtons: {
-      flexDirection:
-        "row",
-
-      borderWidth: 1,
-
-      borderColor:
-        "#dddddd",
-
-      borderRadius: 6,
-
-      overflow:
-        "hidden",
-    },
-
-    orientationButton: {
-      paddingHorizontal: 10,
-
-      paddingVertical: 6,
-
-      backgroundColor:
-        "#ffffff",
-    },
-
-    selectedOrientation: {
-      backgroundColor:
-        "#2563eb",
-    },
-
-    orientationText: {
-      fontSize: 10,
-
-      color:
-        "#666666",
-    },
-
-    selectedOrientationText: {
-      fontSize: 10,
-
-      color:
-        "#ffffff",
-
-      fontWeight:
-        "600",
-    },
-
-    previewContainer: {
-      minHeight: 280,
-
-      padding: 12,
-
-      backgroundColor:
-        "#e5e5e5",
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
-    },
-
-    previewTitle: {
-      alignSelf:
-        "flex-start",
-
-      marginBottom: 8,
-
-      fontSize: 13,
-
-      fontWeight:
-        "700",
-
-      color:
-        "#222222",
-    },
-
-    errorContainer: {
-      flex: 1,
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
-
-      padding: 20,
-
-      backgroundColor:
-        "#fff5f5",
-    },
-
-    errorTitle: {
-      color:
-        "#dc2626",
-
-      fontSize: 14,
-
-      fontWeight:
-        "600",
-
-      marginBottom: 6,
-    },
-
-    errorText: {
-      color:
-        "#ef4444",
-
-      fontSize: 11,
-
-      textAlign:
-        "center",
-    },
-
-    emptyPreview: {
-      flex: 1,
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
-    },
-
-    emptyText: {
-      marginTop: 8,
-
-      color:
-        "#999999",
-
-      fontSize: 12,
-    },
-
-    section: {
-      padding: 12,
-
-      backgroundColor:
-        "#ffffff",
-
-      borderBottomWidth: 1,
-
-      borderBottomColor:
-        "#dddddd",
-    },
-
-    sectionTitle: {
-      marginBottom: 10,
-
-      fontSize: 12,
-
-      fontWeight:
-        "700",
-
-      color:
-        "#555555",
-
-      textTransform:
-        "uppercase",
-    },
-
-    deviceButton: {
-      paddingHorizontal: 12,
-
-      paddingVertical: 8,
-
-      marginRight: 8,
-
-      borderWidth: 1,
-
-      borderColor:
-        "#dddddd",
-
-      borderRadius: 6,
-
-      backgroundColor:
-        "#ffffff",
-    },
-
-    deviceName: {
-      fontSize: 11,
-
-      fontWeight:
-        "600",
-
-      color:
-        "#222222",
-    },
-
-    deviceResolution: {
-      marginTop: 3,
-
-      fontSize: 10,
-
-      color:
-        "#888888",
-    },
-
-    settings: {
-      padding: 12,
-
-      backgroundColor:
-        "#ffffff",
-    },
-
-    emptySettings: {
-      color:
-        "#999999",
-
-      fontSize: 11,
-
-      textAlign:
-        "center",
-
-      paddingVertical:
-        20,
-    },
-
-    dataContextHeader: {
-      minHeight: 46,
-
-      paddingHorizontal: 12,
-
-      backgroundColor:
-        "#ffffff",
-
-      borderTopWidth: 1,
-
-      borderBottomWidth: 1,
-
-      borderColor:
-        "#dddddd",
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-    },
-
-    expandIcon: {
-      marginLeft:
-        "auto",
-
-      color:
-        "#777777",
-
-      fontSize: 11,
-    },
-
-    dataContext: {
-      maxHeight: 350,
-
-      padding: 12,
-
-      backgroundColor:
-        "#111111",
-    },
-
-    json: {
-      fontFamily:
-        "monospace",
-
-      fontSize: 10,
-
-      color:
-        "#eeeeee",
-    },
-  });

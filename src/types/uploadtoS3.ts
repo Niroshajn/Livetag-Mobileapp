@@ -26,10 +26,19 @@ export const uploadToS3 = async (
     }
   );
 
-  if (!data?.uploadUrl || !data?.fileUrl) {
-    throw new Error("Missing S3 upload URL or file URL.");
-  }
+ console.log("========================================");
+console.log("[S3 PRESIGNED RESPONSE]");
+console.log("uploadUrl:", data?.uploadUrl);
+console.log("fileUrl:", data?.fileUrl);
+console.log("uploadType:", uploadType);
+console.log("extra:", extra);
+console.log("originalName:", originalName);
+console.log("mimeType:", mimeType);
+console.log("========================================");
 
+if (!data?.uploadUrl || !data?.fileUrl) {
+  throw new Error("Missing S3 upload URL or file URL.");
+}
   const xhr = new XMLHttpRequest();
 
   await new Promise<void>((resolve, reject) => {

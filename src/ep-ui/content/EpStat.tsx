@@ -1,72 +1,54 @@
+
 import React from "react";
-import {
-  View,
-  Text,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import type { DeviceProfile } from "../../../packages/ltag/device";
 
-export type EpStatProps = {
-  value?: React.ReactNode;
-
-  label?: React.ReactNode;
-
-  size?: number;
-
-  style?: StyleProp<ViewStyle>;
+type EpStatProps = {
+  value: string;
+  label?: string;
+  align?: "left" | "center" | "right";
+  size?: "small" | "medium" | "large";
+  profile?: DeviceProfile;
 };
 
 export function EpStat({
   value,
   label,
-  size = 28,
-  style,
+  size = "medium",
+  align = "right",
+  profile,
 }: EpStatProps) {
+  const statSize = profile?.statSizes?.[size] ?? {
+    small: { fontSize: 16, lineHeight: 20 },
+    medium: { fontSize: 20, lineHeight: 24 },
+    large: { fontSize: 26, lineHeight: 30 },
+  }[size];
+
   return (
-    <View
-      style={[
-        {
-          width: "100%",
-
-          alignItems: "center",
-
-          justifyContent: "center",
-
-          padding: 4,
-        },
-
-        style,
-      ]}
-    >
+    <View style={styles.stat}>
       <Text
-        style={{
-          color: "#111111",
-
-          fontSize: Number(size) || 28,
-
-          fontWeight: "700",
-
-          textAlign: "center",
-
-          includeFontPadding: false,
-        }}
+        allowFontScaling={false}
+        style={[
+          styles.statValue,
+          {
+            fontSize: statSize.fontSize,
+            lineHeight: statSize.lineHeight,
+            textAlign: align,
+          },
+        ]}
       >
-        {String(value ?? "")}
+        {value}
       </Text>
 
-      {label !== undefined ? (
+      {label ? (
         <Text
-          style={{
-            color: "#666666",
-
-            fontSize: 12,
-
-            marginTop: 4,
-
-            textAlign: "center",
-          }}
+          allowFontScaling={false}
+          style={[
+            styles.statLabel,
+            { textAlign: align },
+          ]}
         >
-          {String(label)}
+          {label}
         </Text>
       ) : null}
     </View>
@@ -74,3 +56,26 @@ export function EpStat({
 }
 
 export default EpStat;
+
+const styles = StyleSheet.create({
+  stat: {
+    width: "100%",
+    minWidth: 0,
+  },
+  statValue: {
+    fontWeight: "700",
+    fontFamily: "Roboto",
+    color: "#000000",
+    includeFontPadding: false,
+    flexShrink: 1,
+  },
+  statLabel: {
+    marginTop: 4,
+    fontSize: 14,
+    lineHeight: 18,
+    fontFamily: "Roboto",
+    color: "#000000",
+    includeFontPadding: false,
+    flexShrink: 1,
+  },
+});
