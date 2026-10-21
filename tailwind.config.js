@@ -1,6 +1,7 @@
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: "class", // ✅ REQUIRED
+  darkMode: "class",
   content: [
     "./App.{js,jsx,ts,tsx}",
     "./src/**/*.{js,jsx,ts,tsx}",
@@ -9,7 +10,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        roboto: ["Roboto"],
+        roboto: ["Roboto-Regular"],
       },
     },
   },

@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
+  View, 
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
   Image,
   Dimensions,
 } from "react-native";
+import Text from "../components/AppText";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import {
   Plus,
@@ -154,9 +154,13 @@ const openPlayground = async (item: PlaylistItem) => {
             )}
             {/* TEXT */}
             <View className="flex-1">
-              <Text numberOfLines={1} className="text-gray-900 dark:text-white font-semibold">
-                {plugin?.pluginName || "Plugin"}
-              </Text>
+              <Text
+  bold
+  numberOfLines={1}
+  className="text-gray-900 dark:text-white"
+>
+  {plugin?.pluginName || "Plugin"}
+</Text>
               <Text className="text-gray-400 text-xs">
                 {item.startTime} - {item.endTime}
               </Text>
@@ -231,9 +235,9 @@ const openPlayground = async (item: PlaylistItem) => {
             className="border border-blue-500 px-2 py-2 rounded-lg flex-row items-center w-full mt-5 justify-center"
           >
             <Plus size={iconSize} color="#3B82F6" />
-            <Text className="text-blue-400 ml-2 text-sm">
-              Add Item
-            </Text>
+            <Text bold className="text-blue-400 ml-2 text-sm">
+  Add Item
+</Text>
           </TouchableOpacity>
         </View>
 
@@ -267,21 +271,29 @@ const openPlayground = async (item: PlaylistItem) => {
         />
 
         {selectedPlugin && (
-          <PlaylistItemModal key={selectedItem?.id || "new"} // ✅ FIX 
-            open={openPlaylistModal}
-            onClose={() => setOpenPlaylistModal(false)}
-            plugin={selectedPlugin}
-            pluginName={selectedPlugin.pluginName}
-            selectedItem={selectedItem}
-            frameId={id}
-            onSaved={async () => {
-              await fetchPlaylist();
-              setOpenPlaylistModal(false);
-              setSelectedItem(null);
-              setSelectedPlugin(null);
-            }}
-          />
-        )}
+  <PlaylistItemModal
+    key={selectedItem?.id || "new"}
+    open={openPlaylistModal}
+    onClose={() => {
+      setOpenPlaylistModal(false);
+      setSelectedItem(null);
+      setSelectedPlugin(null);
+    }}
+    plugin={selectedPlugin}
+    pluginName={selectedPlugin.pluginName}
+    selectedItem={selectedItem}
+    frameId={id}
+    onSaved={async () => {
+      // Close the modal and clear the selected item.
+      setOpenPlaylistModal(false);
+      setSelectedItem(null);
+      setSelectedPlugin(null);
+
+      // Refresh the playlist for the current device.
+      await fetchPlaylist();
+    }}
+  />
+)}
 
         <DeleteModal
           visible={openDeleteModal}   // ✅ correct

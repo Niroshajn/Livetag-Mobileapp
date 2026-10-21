@@ -4,9 +4,6 @@ import { LTError } from "../errors";
 
 export function compileLTHtml(html: string): EpNode {
   console.log("COMPILE INPUT HTML:", html);
-  console.log(
-  "========== TEXT CENTER DEBUG: INPUT HTML =========="
-);
 console.log(html);
   const root = parse(html);
   const segment = root.querySelector(".segment");

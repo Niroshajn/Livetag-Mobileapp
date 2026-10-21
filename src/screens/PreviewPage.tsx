@@ -3056,14 +3056,16 @@ import {
   Linking,
   Pressable,
   ScrollView,
-  Text,
+  Platform,
   View,
+  Keyboard,
+  KeyboardAvoidingView,
   useWindowDimensions,
 } from "react-native";
-
+import Text from "../components/AppText";
 import { WebView } from "react-native-webview";
 import { Liquid } from "liquidjs";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   EpCanvas,
   EpRow,
@@ -3078,6 +3080,7 @@ import type { EpNode } from "../../packages/ltag";
 import { compileLTHtml } from "../../packages/ltag/compile/compiler";
 import { resolveLayout } from "../../packages/ltag/resolve/resolveLayout";
 import InAppBrowser from "react-native-inappbrowser-reborn";
+import { useNavigation } from "@react-navigation/native";
 
 import {
   DEFAULT_DEVICE_PROFILE,
@@ -3287,6 +3290,35 @@ function normalizeExecutionContext(
 export default function PluginPlaygroundScreen({
   route,
 }: Props) {
+
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+useEffect(() => {
+  const showEvent =
+    Platform.OS === "ios"
+      ? "keyboardWillShow"
+      : "keyboardDidShow";
+
+  const hideEvent =
+    Platform.OS === "ios"
+      ? "keyboardWillHide"
+      : "keyboardDidHide";
+
+  const showSubscription = Keyboard.addListener(
+    showEvent,
+    () => setKeyboardVisible(true)
+  );
+
+  const hideSubscription = Keyboard.addListener(
+    hideEvent,
+    () => setKeyboardVisible(false)
+  );
+
+  return () => {
+    showSubscription.remove();
+    hideSubscription.remove();
+  };
+}, []);
   const pluginId =
     route?.params?.pluginId;
   const playlistItemId =
@@ -3300,7 +3332,7 @@ export default function PluginPlaygroundScreen({
     () => new Liquid(),
     []
   );
-
+const navigation = useNavigation<any>();
   const [loading, setLoading] =
     useState(true);
 const [showFrameSelect, setShowFrameSelect] = useState(false);
@@ -4744,7 +4776,16 @@ case "stat":
     );
   }
 
-  return (
+return (
+<SafeAreaView
+  className="flex-1 bg-[#f5f5f5]"
+  edges={["top", "left", "right"]}
+>
+  <KeyboardAvoidingView
+    style={{ flex: 1 }}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+    keyboardVerticalOffset={0}
+  >
     <View className="flex-1 bg-[#f5f5f5]">
       <View
         className="
@@ -4762,10 +4803,10 @@ case "stat":
           className="flex-1 pr-2"
         >
           <Text
+          bold
             numberOfLines={1}
             className="
               text-[15px]
-              font-bold
               text-[#111111]
             "
           >
@@ -4789,16 +4830,16 @@ case "stat":
   <Pressable
     disabled={!hasChanges || isExecuting}
     onPress={executePlayground}
-    className={`h-9 px-3 rounded-lg border border-[#cccccc] items-center justify-center bg-white ${
+    className={`h-9 px-3 rounded-lg border border-[#1683ff] items-center justify-center bg-white ${
       !hasChanges || isExecuting ? "opacity-45" : ""
     }`}
   >
     {isExecuting ? (
       <ActivityIndicator size="small" />
     ) : (
-      <Text className="text-xs font-semibold text-[#111111]">
-        Execute
-      </Text>
+      <Text bold className="text-xs text-[#1683ff]">
+  Execute
+</Text>
     )}
   </Pressable>
 
@@ -4806,26 +4847,26 @@ case "stat":
     <Pressable
       disabled={isUpdatingPlaylist}
       onPress={handleUpdatePlaylist}
-      className={`h-9 px-3 rounded-lg items-center justify-center bg-[#2563eb] ${
+      className={`h-9 px-3 rounded-lg items-center justify-center border border-[#1683ff] ${
         isUpdatingPlaylist ? "opacity-45" : ""
       }`}
     >
       {isUpdatingPlaylist ? (
         <ActivityIndicator size="small" color="#ffffff" />
       ) : (
-        <Text className="text-xs font-semibold text-white">
-          Update to Playlist
-        </Text>
+        <Text bold className="text-xs text-white">
+  Update to Playlist
+</Text>
       )}
     </Pressable>
   ) : (
    <Pressable
   onPress={() => setShowFrameSelect(true)}
-  className="h-9 flex-row items-center justify-center rounded-lg border border-[#2563eb] bg-white px-3"
+  className="h-9 flex-row items-center justify-center rounded-lg border border-[#1683ff] bg-white px-3"
 >
-  <Text className="text-xs font-semibold text-[#2563eb]">
-    + Add to Playlist
-  </Text>
+ <Text bold className="text-xs text-[#1683ff]">
+  + Add to Playlist
+</Text>
 </Pressable>
   )}
 </View>
@@ -4861,16 +4902,9 @@ case "stat":
             items-center
           "
         >
-          <Text
-            className="
-              text-xs
-              font-semibold
-              text-[#222222]
-            "
-          >
-            {device?.modelNo ??
-              "Device"}
-          </Text>
+         <Text bold className="text-xs text-[#222222]">
+  {device?.modelNo ?? "Device"}
+</Text>
 
           <Text
             className="
@@ -4979,24 +5013,24 @@ case "stat":
         ) : null}
       </View>
 
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="pb-[30px]"
-        showsVerticalScrollIndicator={
-          false
-        }
-      >
+   <ScrollView
+  style={{ flex: 1 }}
+  contentContainerStyle={{
+    paddingBottom: keyboardVisible ? 24 : 40,
+    flexGrow: 1,
+  }}
+  keyboardShouldPersistTaps="handled"
+  keyboardDismissMode={
+    Platform.OS === "ios" ? "interactive" : "on-drag"
+  }
+  automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+  nestedScrollEnabled
+  showsVerticalScrollIndicator={false}
+>
         <View className="p-3">
-          <Text
-            className="
-              mb-2
-              text-[13px]
-              font-bold
-              text-[#222222]
-            "
-          >
-            Preview
-          </Text>
+         <Text bold className="mb-2 text-[13px] text-[#222222]">
+  Preview
+</Text>
 
           <View
             onLayout={(event) => {
@@ -5281,18 +5315,26 @@ onDisconnect={async (id) => {
 {selectedFrame && plugin && (
   <PlaylistItemModal
     open={showPlaylistItem}
-    onClose={() => setShowPlaylistItem(false)}
+    onClose={() => {
+      setShowPlaylistItem(false);
+    }}
     pluginName={plugin.pluginName}
     plugin={plugin}
     selectedItem={null}
     frameId={selectedFrame.frameId}
     onSaved={() => {
+      const frameId = selectedFrame.frameId;
+
       setShowPlaylistItem(false);
       setShowFrameSelect(false);
       setSelectedFrame(null);
+
+      navigation.navigate("PlayList", { id: String(frameId) });
     }}
   />
 )}
-    </View>
-  );
+            </View>
+  </KeyboardAvoidingView>
+</SafeAreaView>
+);
 }

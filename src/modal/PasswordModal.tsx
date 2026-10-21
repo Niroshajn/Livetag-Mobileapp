@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import {
-  View,
-  Text,
+  View,  
   TouchableOpacity,
   TextInput,
   Pressable,
 } from "react-native";
+import Text from "../components/AppText";
 import { X } from "lucide-react-native";
 import { EyeOff } from "lucide-react-native";
 import { Eye } from "lucide-react-native";

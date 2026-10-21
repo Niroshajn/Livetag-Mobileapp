@@ -1,7 +1,8 @@
 
 // export default EpImage;
 import React from "react";
-import { Image, Text, View, type DimensionValue, } from "react-native"; 
+import { Image, View, type DimensionValue, } from "react-native"; 
+import Text from "../../components/AppText";
 type EpImageProps = { 
   src: string;
    overlayText?: string; 

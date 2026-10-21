@@ -3,14 +3,13 @@ import React, {
   useEffect,
   useState,
 } from "react";
-
+import Text from "../components/AppText";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Image,
-  Pressable,
-  Text,
+  Pressable,  
   TouchableOpacity,
   View,
   Dimensions,

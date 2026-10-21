@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import {
   View,
-  Text,
   TouchableOpacity,
   Image,
   TextInput,
   Alert,
   ActivityIndicator,
 } from "react-native";
+import Text from "../components/AppText";
 import { Camera, User, X } from "lucide-react-native";
 import { launchImageLibrary } from "react-native-image-picker";
 import api from "../lib/api";

@@ -10,12 +10,11 @@ import {
   FlatList,
   Image,
   Pressable,
-  Text,
   TouchableOpacity,
   View,
   Dimensions,
 } from "react-native";
-
+import Text from "../components/AppText";
 import {
   Monitor,
   Trash2,

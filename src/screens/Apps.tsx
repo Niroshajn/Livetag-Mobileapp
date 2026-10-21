@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
-  Text,
   FlatList,
   TextInput,
   TouchableOpacity,
@@ -9,6 +8,7 @@ import {
   Image,
   ScrollView,
 } from "react-native";
+import Text from "../components/AppText";
 import { Puzzle, ChevronDown } from "lucide-react-native";
 import api from "../lib/api";
 import AppLayout from "./Layout";

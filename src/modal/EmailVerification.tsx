@@ -1,8 +1,9 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View,  TouchableOpacity } from "react-native";
 import { XCircle } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Text from "../components/AppText";
 
 export default function EmailVerificationFailed() {
   const navigation = useNavigation<any>();

@@ -1,17 +1,18 @@
-import React, { useState } from "react";
+import React, { useState , useEffect} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   View,
-  Text,
   TextInput,
   Pressable,
   ScrollView,
   ActivityIndicator,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   ToastAndroid,
   Alert,
 } from "react-native";
+import Text from "../components/AppText";
 import { Eye, EyeOff } from "lucide-react-native";
 import { Formik } from "formik";
 import * as Yup from "yup";
@@ -49,6 +50,29 @@ const LoginScreen: React.FC<Props> = ({
 }) => {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+
+const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+useEffect(() => {
+  const showEvent =
+    Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+
+  const hideEvent =
+    Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+  const showSubscription = Keyboard.addListener(showEvent, () => {
+    setKeyboardVisible(true);
+  });
+
+  const hideSubscription = Keyboard.addListener(hideEvent, () => {
+    setKeyboardVisible(false);
+  });
+
+  return () => {
+    showSubscription.remove();
+    hideSubscription.remove();
+  };
+}, []);
 
   const showMessage = (message: string) => {
     if (Platform.OS === "android") {
@@ -232,23 +256,29 @@ const LoginScreen: React.FC<Props> = ({
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100 dark:bg-black">
+ <SafeAreaView className="flex-1 bg-gray-100 dark:bg-black">
       <KeyboardAvoidingView
-        behavior={
-          Platform.OS === "ios"
-            ? "padding"
-            : "height"
-        }
         className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
       >
         <ScrollView
+          style={{ flex: 1 }}
           contentContainerStyle={{
             flexGrow: 1,
-            justifyContent: "center",
+            justifyContent: keyboardVisible ? "flex-start" : "center",
+            paddingHorizontal: 16,
+            paddingTop: keyboardVisible ? 12 : 24,
+            paddingBottom: 32,
           }}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === "ios" ? "interactive" : "on-drag"
+          }
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled
         >
-          <View className="flex-1 justify-center items-center px-4">
+          <View className="w-full items-center">
             <View className="relative w-full max-w-md bg-white dark:bg-[#1a1a1a] p-6 rounded-lg border border-gray-200 dark:border-gray-800">
               <View className="flex-row items-center gap-2 mb-6">
                 <View className="w-5 h-6 items-center justify-center border border-blue-300 bg-gray-100 dark:bg-black">

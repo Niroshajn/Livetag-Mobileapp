@@ -8,19 +8,19 @@ type EpColumnsProps = {
 };
 
 export function EpColumns({ children, columns }: EpColumnsProps) {
-  const count = Math.max(1, Number(columns) || 1);
-  const childArray = React.Children.toArray(children).slice(0, count);
+  const count = Math.max(1, Math.floor(Number(columns) || 1));
+  const childArray = React.Children.toArray(children);
 
   return (
     <View
       style={{
         width: "100%",
         flex: 1,
-        minWidth: 0,
-        minHeight: 0,
         flexDirection: "row",
         alignItems: "stretch",
-        gap: 8,
+        columnGap: 12,
+        minWidth: 0,
+        minHeight: 0,
         overflow: "hidden",
       }}
     >
@@ -29,7 +29,6 @@ export function EpColumns({ children, columns }: EpColumnsProps) {
           key={`ep-column-${index}`}
           style={{
             flex: 1,
-            flexBasis: 0,
             minWidth: 0,
             minHeight: 0,
             flexDirection: "column",

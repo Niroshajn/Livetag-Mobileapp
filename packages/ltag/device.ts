@@ -129,7 +129,7 @@ export const E6_13IN_1200x1600: DeviceProfile = {
   blockBorder: 2,
   blockPaddingY: 12,
 
-  lineHeight: 26,
+  lineHeight: 24,
   wordsPerLine: 8,
   imageDefaultHeight: 120,
 

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  View,
-  Text,
+  View, 
   TouchableOpacity,
   Image,
   ScrollView,
@@ -10,6 +9,7 @@ import {
   Alert,
   Dimensions,
 } from "react-native";
+import Text from "../components/AppText";
 import {
   User,
   Mail,

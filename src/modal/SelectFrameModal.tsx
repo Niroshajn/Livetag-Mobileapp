@@ -5,12 +5,11 @@ import {
   FlatList,
   Modal,
   Pressable,
-  Text,
   View,
   useWindowDimensions,
 } from "react-native";
 import { Check, Monitor, Wifi, X } from "lucide-react-native";
-
+import Text from "../components/AppText";
 import apiClient from "../lib/api";
 import {
   DEFAULT_DEVICE_PROFILE,

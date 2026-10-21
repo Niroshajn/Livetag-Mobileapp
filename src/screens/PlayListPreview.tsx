@@ -13,17 +13,18 @@ import {
   Linking,
   Pressable,
   ScrollView,
-  Text,
+  Platform,
+  Keyboard,
+  KeyboardAvoidingView,
   TouchableOpacity,
   View,
   useWindowDimensions,
 } from "react-native";
 
+import { SafeAreaView } from "react-native-safe-area-context";
+import Text from "../components/AppText";
 import WebView from "react-native-webview";
-
 import { Liquid } from "liquidjs";
-
-
 import {
   EpCanvas,
   EpRow,
@@ -203,10 +204,6 @@ function normalizeExecutionContext(
     return {};
   }
 
-  /* ----------------------------------------------------------
-     Already an object
-  ---------------------------------------------------------- */
-
   if (!Array.isArray(raw) && typeof raw === "object") {
     if (
       raw.data &&
@@ -235,10 +232,6 @@ function normalizeExecutionContext(
     return raw;
   }
 
-  /* ----------------------------------------------------------
-     Array response
-  ---------------------------------------------------------- */
-
   if (Array.isArray(raw)) {
     const context: Record<string, any> = {};
 
@@ -246,7 +239,6 @@ function normalizeExecutionContext(
       if (!item) {
         return;
       }
-
       const key =
         item.instanceKey ??
         item.connectorKey ??
@@ -326,6 +318,34 @@ function normalizeExecutionContext(
 export default function PlaylistPlaygroundScreen({
   route,
 }: Props) {
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios"
+        ? "keyboardWillShow"
+        : "keyboardDidShow";
+
+    const hideEvent =
+      Platform.OS === "ios"
+        ? "keyboardWillHide"
+        : "keyboardDidHide";
+
+    const showSubscription = Keyboard.addListener(
+      showEvent,
+      () => setKeyboardVisible(true)
+    );
+
+    const hideSubscription = Keyboard.addListener(
+      hideEvent,
+      () => setKeyboardVisible(false)
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
   const pluginId = route?.params?.pluginId;
 
   const playlistItemId = route?.params?.playlistItemId;
@@ -340,11 +360,6 @@ export default function PlaylistPlaygroundScreen({
   } = useWindowDimensions();
 
   const engine = useMemo(() => new Liquid(), []);
-
-  /* ==========================================================
-     STATE
-  ========================================================== */
-
   const [loading, setLoading] = useState(true);
 
   const [plugin, setPlugin] = useState<Plugin | null>(null);
@@ -415,10 +430,8 @@ export default function PlaylistPlaygroundScreen({
   >({});
 
   const compileRequestRef = useRef(0);
-
-  /* ==========================================================
-     DEVICE PROFILE
-  ========================================================== */
+const [isUpdatingPlaylist, setIsUpdatingPlaylist] =
+  useState(false);
 
   const baseProfile = useMemo<DeviceProfile>(() => {
     const width = deviceWidth;
@@ -464,10 +477,6 @@ export default function PlaylistPlaygroundScreen({
     ]
   );
 
-  /* ==========================================================
-     PREVIEW SCALE
-  ========================================================== */
-
   const previewWidth = Math.max(
     screenWidth - 24,
     100
@@ -477,6 +486,47 @@ export default function PlaylistPlaygroundScreen({
     screenHeight * 0.52,
     150
   );
+
+const handleUpdatePlaylist = useCallback(async () => {
+  if (!playlistItemId) {
+    Alert.alert("Error", "Playlist item ID is missing.");
+    return;
+  }
+
+  try {
+    setIsUpdatingPlaylist(true);
+
+    // Sync connector data
+    await api.post(
+      `/playlist/item/${playlistItemId}/sync-connectors`
+    );
+
+    // Force render the playlist item
+    await api.post(
+      `/playlist/force-render/${playlistItemId}`
+    );
+
+    setHasChanges(false);
+
+    Alert.alert(
+      "Success",
+      "Playlist updated successfully."
+    );
+  } catch (error: any) {
+    console.error(
+      "UPDATE PLAYLIST ERROR:",
+      error?.response?.data ?? error
+    );
+
+    Alert.alert(
+      "Update failed",
+      error?.response?.data?.message ??
+        "Failed to update playlist. Please try again."
+    );
+  } finally {
+    setIsUpdatingPlaylist(false);
+  }
+}, [playlistItemId, api]);
 
   const scale = Math.min(
     previewWidth / orientedDevice.width,
@@ -489,10 +539,6 @@ export default function PlaylistPlaygroundScreen({
 
   const scaledHeight =
     orientedDevice.height * scale;
-
-  /* ==========================================================
-     CREATE SESSION
-  ========================================================== */
 
   const createPlaygroundSession =
     useCallback(async () => {
@@ -510,9 +556,6 @@ export default function PlaylistPlaygroundScreen({
       return response.data.session;
     }, [pluginId]);
 
-  /* ==========================================================
-     REFRESH SESSION
-  ========================================================== */
 
   const refreshPlaygroundSession =
     useCallback(async () => {
@@ -530,10 +573,7 @@ export default function PlaylistPlaygroundScreen({
       return response.data;
     }, [pluginId]);
 
-  /* ==========================================================
-     LOAD CONNECTORS
-  ========================================================== */
-
+ 
   const loadPlaygroundConnectors =
     useCallback(async (sessionId: string) => {
       const response =
@@ -1921,16 +1961,19 @@ case "stat": {
   ========================================================== */
 
   return (
-    <View className="flex-1 bg-[#f5f5f5]">
-      {/* ====================================================
-          HEADER
-      ==================================================== */}
-
+ <SafeAreaView className="flex-1 bg-[#f5f5f5]">
+  <KeyboardAvoidingView
+    style={{ flex: 1 }}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+    keyboardVerticalOffset={0}
+  >
+      <View className="flex-1 bg-[#f5f5f5]">
       <View className="min-h-[64px] flex-row items-center border-b border-[#dddddd] bg-white px-4 py-2.5">
         <View className="flex-1 pr-2.5">
           <Text
+          bold
             numberOfLines={1}
-            className="text-[15px] font-semibold text-[#111111]"
+            className="text-[15px]  text-[#111111]"
           >
             {plugin.pluginName}
           </Text>
@@ -1950,7 +1993,7 @@ case "stat": {
             !hasChanges ||
             isExecuting
           }
-          className={`h-9 min-w-[80px] items-center justify-center rounded-[6px] bg-[#2563eb] px-3.5 ${
+          className={`h-8 min-w-[80px] items-center justify-center rounded-[6px] border border-[#1683ff] px-3.5 ${
             !hasChanges ||
             isExecuting
               ? "opacity-50"
@@ -1963,16 +2006,45 @@ case "stat": {
               size="small"
             />
           ) : (
-            <Text className="text-[12px] font-semibold text-white">
+            <Text bold className="text-[12px]  text-[#1683ff]">
               Execute
             </Text>
           )}
-        </TouchableOpacity>
-      </View>
+               </TouchableOpacity>
 
-      {/* ====================================================
-          ORIENTATION
-      ==================================================== */}
+        {/* UPDATE TO PLAYLIST BUTTON */}
+        {playlistItemId ? (
+            <TouchableOpacity
+    onPress={handleUpdatePlaylist}
+    disabled={isUpdatingPlaylist}
+    className={`ml-1 h-8 flex-row items-center justify-center rounded-[4px] border border-[#1683ff] px-2 ${
+      isUpdatingPlaylist ? "opacity-50" : ""
+    }`}
+  >
+            {isUpdatingPlaylist ? (
+              <>
+                <ActivityIndicator
+                  color="#ffffff"
+                  size="small"
+                />
+                <Text
+                  bold
+                  className="ml-2 text-[11px] text-[#1683ff]"
+                >
+                  Updating...
+                </Text>
+              </>
+            ) : (
+              <Text
+                bold
+                className="text-[11px] text-[#1683ff]"
+              >
+                Update to Playlist
+              </Text>
+            )}
+          </TouchableOpacity>
+        ) : null}
+      </View>
 
       <View className="min-h-[52px] flex-row items-center justify-between border-b border-[#dddddd] bg-white px-3">
         <View>
@@ -2000,11 +2072,11 @@ case "stat": {
                 : ""
             }`}
           >
-            <Text
+            <Text bold
               className={`text-[10px] ${
                 orientation ===
                 "landscape"
-                  ? "font-semibold text-white"
+                  ? " text-white"
                   : "text-[#666666]"
               }`}
             >
@@ -2025,11 +2097,11 @@ case "stat": {
                 : ""
             }`}
           >
-            <Text
+            <Text bold
               className={`text-[10px] ${
                 orientation ===
                 "portrait"
-                  ? "font-semibold text-white"
+                  ? " text-white"
                   : "text-[#666666]"
               }`}
             >
@@ -2043,9 +2115,19 @@ case "stat": {
           MAIN
       ==================================================== */}
 
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="pb-[30px]"
+  
+    <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingBottom: keyboardVisible ? 24 : 40,
+          flexGrow: 1,
+        }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={
+          Platform.OS === "ios" ? "interactive" : "on-drag"
+        }
+        automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+        nestedScrollEnabled
         showsVerticalScrollIndicator={false}
       >
         {/* ==================================================
@@ -2085,9 +2167,12 @@ case "stat": {
             >
               {compileError ? (
                 <View className="flex-1 items-center justify-center bg-[#fff5f5] p-5">
-                  <Text className="mb-1.5 text-[14px] font-semibold text-[#dc2626]">
-                    Compile Error
-                  </Text>
+                 <Text
+  bold
+  className="mb-1.5 text-[14px] text-[#dc2626]"
+>
+  Compile Error
+</Text>
 
                   <Text className="text-center text-[11px] text-[#ef4444]">
                     {compileError}
@@ -2117,9 +2202,12 @@ case "stat": {
 
         {devices.length > 0 && (
           <View className="border-b border-[#dddddd] bg-white p-3">
-            <Text className="mb-2.5 text-[12px] font-bold uppercase text-[#555555]">
-              Devices
-            </Text>
+            <Text
+  bold
+  className="mb-2.5 text-[12px] uppercase text-[#555555]"
+>
+  Devices
+</Text>
 
             <ScrollView
               horizontal
@@ -2135,7 +2223,7 @@ case "stat": {
                   }
                   className="mr-2 rounded-[6px] border border-[#dddddd] bg-white px-3 py-2"
                 >
-                  <Text className="text-[11px] font-semibold text-[#222222]">
+                  <Text bold className="text-[11px]  text-[#222222]">
                     {item.modelNo}
                   </Text>
 
@@ -2159,7 +2247,7 @@ case "stat": {
         ================================================== */}
 
         <View className="bg-white p-3">
-          <Text className="mb-2.5 text-[12px] font-bold uppercase text-[#555555]">
+          <Text bold className="mb-2.5 text-[12px] uppercase text-[#555555]">
             Settings
           </Text>
 
@@ -2217,9 +2305,12 @@ case "stat": {
           }
           className="min-h-[46px] flex-row items-center border-b border-t border-[#dddddd] bg-white px-3"
         >
-          <Text className="mb-0 text-[12px] font-bold uppercase text-[#555555]">
-            Data Context
-          </Text>
+          <Text
+  bold
+  className="text-[12px] uppercase text-[#555555]"
+>
+  Data Context
+</Text>
 
           <Text className="ml-auto text-[11px] text-[#777777]">
             {dataContextExpanded
@@ -2242,7 +2333,9 @@ case "stat": {
             </Text>
           </ScrollView>
         )}
-      </ScrollView>
-    </View>
+         </ScrollView>
+      </View>
+    </KeyboardAvoidingView>
+  </SafeAreaView>
   );
 }

@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   View,
@@ -23,37 +24,47 @@ export function EpCanvas({
 }: EpCanvasProps) {
   const width = Number(profile.canvasWidth);
   const height = Number(profile.canvasHeight);
-const canvasPadding = full ? 0 : 12;
+  const padding = full ? 0 : 12;
 
-return (
-  <View
-    style={[
-      {
+  return (
+    <View
+      style={[
+        {
+          width,
+          height,
+          padding,
+          backgroundColor: "#ffffff",
+          position: "relative",
+          overflow: "hidden",
+        },
+        style,
+      ]}
+    >
+      <View
+        onLayout={(event) => {
+      const { width, height } = event.nativeEvent.layout;
+
+      console.log("[MOBILE CANVAS ACTUAL SIZE]", {
         width,
         height,
-        minWidth: width,
-        minHeight: height,
-        maxWidth: width,
-        maxHeight: height,
-        padding: canvasPadding,
-        backgroundColor: "#ffffff",
-        position: "relative",
-        overflow: "hidden",
-      },
-      style,
-    ]}
-  >
-     <View
-  style={{
-    flex: 1,
-    alignSelf: "stretch",
-    minWidth: 0,
-    minHeight: 0,
-    overflow: "hidden",
-  }}
->
-  {children}
-</View>
+      });
+
+      console.log("[MOBILE OUTER CANVAS SIZE]", {
+        width,
+        height,
+      });
+    }}
+        style={{
+          flex: 1,
+          width: "100%",
+          minWidth: 0,
+          minHeight: 0,
+          overflow: "hidden",
+        }}
+      >
+        {children}
+      </View>
+
       {overlay ? (
         <View
           pointerEvents="none"
@@ -64,7 +75,6 @@ return (
             maxWidth: width - 40,
             zIndex: 999,
             elevation: 999,
-            alignSelf: "flex-end",
           }}
         >
           {overlay}

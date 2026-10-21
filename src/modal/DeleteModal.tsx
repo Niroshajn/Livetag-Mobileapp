@@ -1,10 +1,10 @@
 import React from "react";
 import {
   View,
-  Text,
   TouchableOpacity,
   Modal,
 } from "react-native";
+import Text from "../components/AppText";
 import { X } from "lucide-react-native";
 import { Dimensions } from "react-native";
 type Props = {

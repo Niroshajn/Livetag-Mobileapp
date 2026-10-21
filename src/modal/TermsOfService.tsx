@@ -1,6 +1,6 @@
 import React from "react";
-import { View, Text, ScrollView, Linking } from "react-native";
-
+import { View,  ScrollView, Linking } from "react-native";
+import Text from "../components/AppText";
 export default function TermsOfServiceScreen() {
     return (
         <ScrollView className="flex-1 bg-gray-50 dark:bg-black">

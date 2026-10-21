@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import {
   View,
-  Text,
   Modal,
   TextInput,
   TouchableOpacity,
   ScrollView,
   Dimensions,
 } from "react-native";
+import Text from "../components/AppText";
 import { X } from "lucide-react-native";
 export default function AddPluginModal({
   open,

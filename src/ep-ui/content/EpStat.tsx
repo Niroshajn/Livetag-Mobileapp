@@ -1,8 +1,8 @@
 
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import type { DeviceProfile } from "../../../packages/ltag/device";
-
+import Text from "../../components/AppText";
 type EpStatProps = {
   value: string;
   label?: string;
@@ -63,8 +63,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   statValue: {
-    fontWeight: "700",
-    fontFamily: "Roboto",
+    fontFamily: "Roboto-Bold",
     color: "#000000",
     includeFontPadding: false,
     flexShrink: 1,
@@ -73,7 +72,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 14,
     lineHeight: 18,
-    fontFamily: "Roboto",
+    fontFamily: "Roboto-Bold",
     color: "#000000",
     includeFontPadding: false,
     flexShrink: 1,

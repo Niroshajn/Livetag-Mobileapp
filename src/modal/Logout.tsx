@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Modal } from "react-native";
+import { View,  TouchableOpacity, Modal } from "react-native";
 import { useUser } from "../context/UserContext";
+import Text from "../components/AppText";
 
 export default function LogoutModal({ visible, onClose }: any) {
   const { logout } = useUser();

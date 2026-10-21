@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import {
   View,
-  Text,
   TextInput,
   ScrollView,
   KeyboardAvoidingView,
@@ -10,6 +9,7 @@ import {
   ActivityIndicator,
   Pressable,
 } from "react-native";
+import Text from "../components/AppText";
 import { Eye, EyeOff } from "lucide-react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../App";
@@ -60,14 +60,19 @@ const ResetPasswordScreen: React.FC<Props> = ({ navigation }) => {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 16,
-          backgroundColor: "#f3f4f6", // gray-100
-        }}
-      >
+           style={{ flex: 1 }}
+           contentContainerStyle={{
+             paddingBottom: 280,
+             flexGrow: 1,
+           }}
+           keyboardShouldPersistTaps="handled"
+           keyboardDismissMode={
+             Platform.OS === "ios" ? "interactive" : "on-drag"
+           }
+           automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+           nestedScrollEnabled
+           showsVerticalScrollIndicator
+         >
         <View className="w-full max-w-md bg-white dark:bg-[#1a1a1a] p-6 rounded-lg border border-gray-200 dark:border-gray-800 relative">
 
           <Text className="text-2xl font-bold text-gray-900 dark:text-white mb-4">

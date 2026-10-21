@@ -5,12 +5,13 @@ import {
   Dimensions,
   Modal,
   ScrollView,
-  Switch,
-  Text,
+  Switch, 
   TextInput,
+  Platform,
   TouchableOpacity,
   View,
 } from "react-native";
+import Text from "../components/AppText";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import {
   Clock,
@@ -264,18 +265,11 @@ export default function PlaylistItemModal({
         );
       }
 
-      Alert.alert(
-        "Success",
-        selectedItem
-          ? "Playlist item updated successfully."
-          : "Plugin added to the playlist successfully."
-      );
+     setDropdownOpen(false);
+setShowStartPicker(false);
+setShowEndPicker(false);
 
-      setDropdownOpen(false);
-      setShowStartPicker(false);
-      setShowEndPicker(false);
-
-      onSaved?.();
+onSaved?.();
     } catch (error: any) {
       console.error(
         "SAVE PLAYLIST ITEM ERROR:",
@@ -321,10 +315,20 @@ export default function PlaylistItemModal({
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
+           <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                  paddingBottom: 280,
+                  flexGrow: 1,
+                }}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode={
+                  Platform.OS === "ios" ? "interactive" : "on-drag"
+                }
+                automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+                nestedScrollEnabled
+                showsVerticalScrollIndicator
+              >
             {/* Display Time */}
             <View className="mb-4">
               <View className="mb-2 flex-row items-center">

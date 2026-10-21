@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import {
   View,
-  Text,
   TouchableOpacity,
   ScrollView,
   TextInput,
   Alert,
 } from "react-native";
+import Text from "../components/AppText";
 import {
   HelpCircle,
   ChevronDown,

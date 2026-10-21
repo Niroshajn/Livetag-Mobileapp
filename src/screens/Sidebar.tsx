@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { View, TouchableOpacity, ScrollView } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import {
   LayoutDashboard,
@@ -12,6 +12,7 @@ import {
   Moon,
   Sun,
 } from "lucide-react-native";
+import Text from "../components/AppText";
 import { useTheme } from "../context/ThemeContext";
 import LogoutModal from "../modal/Logout";
 import { Dimensions } from "react-native";
@@ -41,7 +42,9 @@ const [showLogout, setShowLogout] = useState(false);
           <View className="w-5 h-6 items-center justify-center border border-blue-300 bg-gray-100 dark:bg-black">
             <Text className="text-xs text-gray-800 dark:text-gray-100">#</Text>
           </View>
-          <Text className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+          <Text 
+          bold
+          className="text-xl font-semibold text-gray-800 dark:text-gray-100">
             LIVETAG
           </Text>
         </View>

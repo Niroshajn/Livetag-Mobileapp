@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
     View,
-    Text,
     Modal,
     TextInput,
     TouchableOpacity,
@@ -9,6 +8,7 @@ import {
     ScrollView,
     ActivityIndicator,
 } from "react-native";
+import Text from "../components/AppText";
 import {
     X, Globe, Moon, Power, ChevronDown,
     ChevronUp,

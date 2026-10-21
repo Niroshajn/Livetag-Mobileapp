@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react";
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Modal, Alert, Dimensions } from "react-native";
+import { StyleSheet, View,  TextInput, TouchableOpacity, Modal, Alert, Dimensions } from "react-native";
 import { Monitor } from "lucide-react-native";
 import api from "../lib/api";
-
+import Text from "../components/AppText";
 export default function AddFrameModal({ visible, onClose }: any) {
   const [name, setName] = useState("");
   const [code, setCode] = useState(["", "", "", "", "", ""]);

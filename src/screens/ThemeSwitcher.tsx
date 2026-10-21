@@ -1,6 +1,7 @@
-import { View, Text, Pressable, Dimensions } from "react-native";
+import { View,  Pressable, Dimensions } from "react-native";
 import { Moon, Sun } from "lucide-react-native"; // ✅ FIXED
 import { useTheme } from "../context/ThemeContext";
+import Text from "../components/AppText";
 export default function ThemeSwitcher() {
   const { theme, toggleTheme } = useTheme();
   const { width } = Dimensions.get("window");

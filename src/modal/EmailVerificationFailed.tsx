@@ -1,8 +1,8 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View,  TouchableOpacity } from "react-native";
 import { XCircle } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
-
+import Text from "../components/AppText";
 export default function EmailVerificationFailed() {
   const navigation = useNavigation<any>();
 

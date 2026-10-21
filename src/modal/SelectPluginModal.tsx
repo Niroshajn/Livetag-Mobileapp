@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   View,
-  Text,
   TouchableOpacity,
   FlatList,
   TextInput,
@@ -9,7 +8,7 @@ import {
   Modal,
   Dimensions,
 } from "react-native";
-
+import Text from "../components/AppText";
 import { Monitor, Check, Search, X } from "lucide-react-native";
 import apiClient from "../lib/api";
 

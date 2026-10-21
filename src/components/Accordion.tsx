@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, LayoutAnimation, Platform, UIManager } from "react-native";
+import { View, TouchableOpacity, LayoutAnimation, Platform, UIManager } from "react-native";
 import { ChevronDown } from "lucide-react-native";
-
+import Text from "../components/AppText";
 // Enable animation (Android)
 if (Platform.OS === "android") {
   UIManager.setLayoutAnimationEnabledExperimental?.(true);
