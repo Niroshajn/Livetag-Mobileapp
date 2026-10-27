@@ -16,14 +16,11 @@ export function EpColumn({ children, style }: EpColumnProps) {
     <View
       style={[
         {
-          flexGrow: 1,
-          flexShrink: 1,
-          flexBasis: 0,
+          flex: 1,
           minWidth: 0,
           minHeight: 0,
           flexDirection: "column",
           alignItems: "stretch",
-          alignSelf: "stretch",
           gap: 8,
           overflow: "hidden",
         },

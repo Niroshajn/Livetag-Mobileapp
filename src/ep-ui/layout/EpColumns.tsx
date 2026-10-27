@@ -1,4 +1,3 @@
-
 import React from "react";
 import { View } from "react-native";
 
@@ -7,9 +6,12 @@ type EpColumnsProps = {
   columns: number;
 };
 
-export function EpColumns({ children, columns }: EpColumnsProps) {
+export function EpColumns({
+  children,
+  columns,
+}: EpColumnsProps) {
   const count = Math.max(1, Math.floor(Number(columns) || 1));
-  const childArray = React.Children.toArray(children);
+  const childArray = React.Children.toArray(children).slice(0, count);
 
   return (
     <View
@@ -18,7 +20,7 @@ export function EpColumns({ children, columns }: EpColumnsProps) {
         flex: 1,
         flexDirection: "row",
         alignItems: "stretch",
-        columnGap: 12,
+        gap: 12,
         minWidth: 0,
         minHeight: 0,
         overflow: "hidden",

@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   View,
@@ -29,6 +30,10 @@ export function EpBlock({
   height,
   padding,
 }: EpBlockProps) {
+  const blockPadding = full
+    ? 0
+    : padding ?? profile?.blockPaddingY ?? 12;
+
   const horizontalAlignment =
     hAlign === "center"
       ? "center"
@@ -43,33 +48,27 @@ export function EpBlock({
         ? "flex-end"
         : "flex-start";
 
-  const blockPadding = full
-    ? 0
-    : padding ?? profile?.blockPaddingY ?? 12;
-
   return (
     <View
       style={{
         width: width ?? "100%",
         height,
         flex: height === undefined ? 1 : undefined,
-        flexShrink: 1,
-        minWidth: 0,
-        minHeight: 0,
-        alignSelf: "stretch",
-
         flexDirection: "column",
         justifyContent: verticalAlignment,
         alignItems: horizontalAlignment,
 
-        // Match the web block's padding on all sides.
+        gap: 8,
         padding: blockPadding,
 
         borderWidth: border ? 1 : 0,
         borderColor: "#000000",
-        borderStyle: "solid",
-
         backgroundColor: "#ffffff",
+
+        minWidth: 0,
+        minHeight: 0,
+        flexShrink: 1,
+        alignSelf: "stretch",
         overflow: "hidden",
       }}
     >

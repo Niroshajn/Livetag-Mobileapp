@@ -6,6 +6,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from "react-native";
+
 import Text from "../../components/AppText";
 import type { DeviceProfile } from "../../../packages/ltag/device";
 
@@ -34,69 +35,50 @@ export function EpText({
 }: EpTextProps) {
   const fontSize =
     profile?.textSizes?.[size] ??
-    { small: 16, medium: 18, large: 22 }[size];
+    { small: 16, medium: 20, large: 22 }[size];
 
   const lineHeight = fontSize + 4;
 
-  const debugText =
-    typeof children === "string" || typeof children === "number"
-      ? String(children)
-      : "";
-
-
-return (
-  <View
-    onLayout={(event) => {
-      const { width: actualWidth, height: actualHeight } =
-        event.nativeEvent.layout;
-
-      console.log("[MOBILE TEXT SIZE]", {
-        actualWidth,
-        actualHeight,
-        fontSize,
-        lineHeight,
-        text: debugText,
-      });
-    }}
-    style={[
-      {
-        width: width ?? "100%",
-        height,
-        minWidth: 0,
-        minHeight: 0,
-        flexShrink: 1,
-        alignSelf: "stretch",
-        justifyContent:
-          vAlign === "center"
-            ? "center"
-            : vAlign === "bottom"
-              ? "flex-end"
-              : "flex-start",
-      },
-      style,
-    ]}
-  >
-    <Text
-      allowFontScaling={false}
+  return (
+    <View
       style={[
         {
-          width: "100%",
+          width: width ?? "100%",
+          height,
+          minWidth: 0,
+          minHeight: 0,
+          alignSelf: "stretch",
           flexShrink: 1,
-          color: "#000000",
-          fontFamily: "Roboto-Regular",
-          fontSize,
-          lineHeight,
-          textAlign: align,
-          includeFontPadding: false,
+          justifyContent:
+            vAlign === "center"
+              ? "center"
+              : vAlign === "bottom"
+                ? "flex-end"
+                : "flex-start",
         },
-        textStyle,
+        style,
       ]}
     >
-      {children == null ? null : children}
-    </Text>
-  </View>
-);
-
+      <Text
+        allowFontScaling={false}
+        style={[
+          {
+            color: "#000000",
+            fontFamily: "Roboto-Regular",
+            fontSize,
+            lineHeight,
+            textAlign: align,
+            includeFontPadding: false,
+            margin: 0,
+            padding: 0,
+          },
+          textStyle,
+        ]}
+      >
+        {children}
+      </Text>
+    </View>
+  );
 }
 
 export default EpText;
