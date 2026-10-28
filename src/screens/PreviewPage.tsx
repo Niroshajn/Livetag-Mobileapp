@@ -344,10 +344,27 @@ const [selectedFrame, setSelectedFrame] =
   const [compileError, setCompileError] =
     useState<string | null>(null);
 
-  const [
-    openInstanceId,
-    setOpenInstanceId,
-  ] = useState<string | null>(null);
+const [openInstanceId, setOpenInstanceId] =
+  useState<string | null>(null);
+
+useEffect(() => {
+  if (playgroundInstances.length > 0) {
+    setOpenInstanceId((currentId) => {
+      // Keep the current dropdown open if it still exists.
+      if (
+        currentId &&
+        playgroundInstances.some(
+          (instance) => instance.id === currentId
+        )
+      ) {
+        return currentId;
+      }
+
+      // Open the first connector by default.
+      return playgroundInstances[0].id;
+    });
+  }
+}, [playgroundInstances]);
 
   const [hasChanges, setHasChanges] =
     useState(false);
@@ -400,9 +417,6 @@ const [selectedFrame, setSelectedFrame] =
   const deviceHeight =
     currentDeviceProfile.canvasHeight;
 
-  /* =========================================================
-     DEVICE PROFILE
-  ========================================================= */
 
   const getDeviceProfile =
     useCallback(
@@ -473,10 +487,6 @@ const [selectedFrame, setSelectedFrame] =
     getDeviceProfile,
   ]);
 
-  /* =========================================================
-     LOAD DEVICES
-  ========================================================= */
-
   const loadDevices =
     useCallback(async () => {
       try {
@@ -515,9 +525,6 @@ const [selectedFrame, setSelectedFrame] =
       }
     }, []);
 
-  /* =========================================================
-     LOAD PLUGIN
-  ========================================================= */
 
   const loadPlugin =
     useCallback(async () => {
@@ -531,54 +538,26 @@ const [selectedFrame, setSelectedFrame] =
       );
     }, [pluginId]);
 
-  /* =========================================================
-     LOAD CONNECTORS
-  ========================================================= */
-
   const loadConnectors =
     useCallback(async () => {
       const response =
         await api.get<Connector[]>(
           "/test/data-connectors/connectors"
         );
-
       const list =
         response.data ?? [];
-
-      console.log(
-        "========== CONNECTORS =========="
-      );
-
-      console.log(
-        JSON.stringify(
-          list,
-          null,
-          2
-        )
-      );
-
       setConnectors(list);
     }, []);
 
-  /* =========================================================
-     PLAYGROUND SESSION
-  ========================================================= */
 
+ 
+    
   const createPlaygroundSession =
     useCallback(async () => {
       const response =
         await api.post<PlaygroundSessionResponse>(
           `/playground/${pluginId}/create-session`
         );
-
-      console.log(
-        "========== CREATED SESSION =========="
-      );
-
-      console.log(
-        response.data
-      );
-
       return response.data.session;
     }, [pluginId]);
 
@@ -590,11 +569,9 @@ const [selectedFrame, setSelectedFrame] =
         }>(
           `/playground/${pluginId}/refresh`
         );
-
       console.log(
         response.data
       );
-
       return response.data;
     }, [pluginId]);
 
@@ -609,10 +586,8 @@ const [selectedFrame, setSelectedFrame] =
           >(
             `/playground/${sessionId}/connectors`
           );
-
         const list =
           response.data ?? [];
-
         console.log(
           JSON.stringify(
             list,
@@ -620,11 +595,9 @@ const [selectedFrame, setSelectedFrame] =
             2
           )
         );
-
         setPlaygroundInstances(
           list
         );
-
         return list;
       },
       []
@@ -639,14 +612,11 @@ const [selectedFrame, setSelectedFrame] =
           await api.get<any>(
             `/execution/playground/${sessionId}`
           );
-
         const executionData =
           response.data;
-
         setPlaygroundExecutionData(
           executionData
         );
-
         return executionData;
       },
       []
@@ -664,11 +634,6 @@ const [selectedFrame, setSelectedFrame] =
 
         const data =
           response.data;
-
-        console.log(
-          "========== PLAYLIST PLAYGROUND =========="
-        );
-
         console.log(
           JSON.stringify(
             data,
@@ -699,9 +664,6 @@ const [selectedFrame, setSelectedFrame] =
       [playgroundExecution]
     );
 
-  /* =========================================================
-     INITIAL LOAD
-  ========================================================= */
 
   useEffect(() => {
     let cancelled = false;
@@ -784,10 +746,6 @@ const [selectedFrame, setSelectedFrame] =
     loadPlaylistPlayground,
   ]);
 
-  /* =========================================================
-     DATA CONTEXT
-  ========================================================= */
-
   const dataContext =
     useMemo(
       () =>
@@ -805,26 +763,8 @@ const [selectedFrame, setSelectedFrame] =
         2
       )
     );
-    console.log(
-      "LIQUID KEYS:",
-      Object.keys(
-        dataContext
-      )
-    );
-    console.log(
-      "RSS:",
-      dataContext?.rss
-    );
-    console.log(
-      "RSS ITEMS:",
-      dataContext?.rss
-        ?.items
-    );
   }, [dataContext]);
 
-  /* =========================================================
-     COMPILE
-  ========================================================= */
 
   useEffect(() => {
     if (!plugin) {
@@ -840,9 +780,6 @@ const [selectedFrame, setSelectedFrame] =
       async () => {
         try {
           setCompileError(null);
-          console.log(
-            "LIQUID CONTEXT:"
-          );
           console.log(
             JSON.stringify(
               dataContext,
@@ -914,7 +851,6 @@ const [selectedFrame, setSelectedFrame] =
             error?.message ??
               "Failed to compile plugin."
           );
-
           setEpuiTree(null);
         }
       };
@@ -935,9 +871,7 @@ const executePlayground = useCallback(async () => {
 
   try {
     setIsExecuting(true);
-
     const session = await refreshPlaygroundSession();
-
     const [executionData, updatedInstances] =
       await Promise.all([
         playgroundExecution(session.id),
@@ -971,11 +905,6 @@ const executePlayground = useCallback(async () => {
   loadPlaygroundConnectors,
 ]);
 
-
-  /* =========================================================
-     CONFIG UPDATE
-  ========================================================= */
-
   const updatePlaygroundInstanceConfig =
     useCallback(
       (
@@ -1008,7 +937,6 @@ const executePlayground = useCallback(async () => {
             oldTimer
           );
         }
-
         configTimers.current[
           instanceId
         ] = setTimeout(
@@ -1018,7 +946,6 @@ const executePlayground = useCallback(async () => {
             ) {
               return;
             }
-
             try {
               await api.patch(
                 `/playground/${playgroundSessionId}/connector-instance/${instanceId}`,
@@ -1121,9 +1048,6 @@ const refreshAfterOAuth = useCallback(async () => {
       []
     );
 
-  /* =========================================================
-     OAUTH RETURN
-  ========================================================= */
 
 
 useEffect(() => {
@@ -1178,13 +1102,6 @@ const handleDeepLink = async ({ url }: { url: string }) => {
 ]);
 
 
-  /* =========================================================
-     PLAYLIST UPDATE
-  ========================================================= */
-/* =========================================================
-   PLAYLIST UPDATE — SAME AS WEB APP
-========================================================= */
-
 const handleUpdatePlaylist = useCallback(async () => {
   if (!playlistItemId) {
     Alert.alert("Error", "Playlist item not found.");
@@ -1213,9 +1130,8 @@ const handleUpdatePlaylist = useCallback(async () => {
     setIsUpdatingPlaylist(false);
   }
 }, [playlistItemId]);
-  /* =========================================================
-     RENDER EP NODE
-  ========================================================= */
+ 
+
 const renderEpNode = useCallback(
   (
     node: EpNode,
@@ -1288,23 +1204,6 @@ const renderEpNode = useCallback(
     return null;
   }
 
-  console.log("========== MOBILE EP COLUMNS ==========");
-
-  console.log(
-    columns.map(
-      (
-        column: EpNode[],
-        columnIndex: number
-      ) => ({
-        column: columnIndex,
-        count: column.length,
-        types: column.map(
-          (item: EpNode) => item.type
-        ),
-      })
-    )
-  );
-
   return (
     <EpColumns
       key={key}
@@ -1337,10 +1236,7 @@ const renderEpNode = useCallback(
     </EpColumns>
   );
 }
-      /* =================================================
-         COLUMN
-      ================================================= */
-
+    
      case "column":
   return (
     <EpColumn key={key}>
@@ -1727,7 +1623,6 @@ case "stat":
         <ActivityIndicator
           size="large"
         />
-
         <Text className="mt-3 text-[#666666] text-sm">
           Loading PluginIDE...
         </Text>

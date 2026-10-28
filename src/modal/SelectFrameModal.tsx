@@ -158,7 +158,8 @@ export default function SelectFrameModal({
     });
   };
 
-  const cardWidth = (width - 64) / 2;
+const cardGap = 12;
+const cardWidth = (Math.min(width - 32, 400) - 40 - cardGap) / 2;
 
   const retry = async () => {
     setLoading(true);
@@ -217,7 +218,7 @@ export default function SelectFrameModal({
               accessibilityRole="button"
               accessibilityLabel="Close device selector"
               hitSlop={10}
-              className="p-1"
+              className="p-2 ml-2"
             >
               <X size={20} color="#9CA3AF" />
             </Pressable>

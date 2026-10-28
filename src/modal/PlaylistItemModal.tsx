@@ -315,20 +315,19 @@ onSaved?.();
             </TouchableOpacity>
           </View>
 
-           <ScrollView
-                style={{ flex: 1 }}
-                contentContainerStyle={{
-                  paddingBottom: 280,
-                  flexGrow: 1,
-                }}
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode={
-                  Platform.OS === "ios" ? "interactive" : "on-drag"
-                }
-                automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
-                nestedScrollEnabled
-                showsVerticalScrollIndicator
-              >
+         <ScrollView
+  style={{ flexShrink: 1 }}
+  contentContainerStyle={{
+    paddingBottom: 12,
+  }}
+  keyboardShouldPersistTaps="handled"
+  keyboardDismissMode={
+    Platform.OS === "ios" ? "interactive" : "on-drag"
+  }
+  automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+  nestedScrollEnabled
+  showsVerticalScrollIndicator
+>
             {/* Display Time */}
             <View className="mb-4">
               <View className="mb-2 flex-row items-center">
@@ -355,12 +354,10 @@ onSaved?.();
                     <Text className="mb-1 text-xs text-gray-500">
                       Start
                     </Text>
-
                     <Text className="text-base text-gray-700 dark:text-gray-300">
                       {startTime}
                     </Text>
                   </View>
-
                   <Clock size={iconSize} color="gray" />
                 </TouchableOpacity>
 
@@ -379,12 +376,10 @@ onSaved?.();
                     <Text className="mb-1 text-xs text-gray-500">
                       End
                     </Text>
-
                     <Text className="text-base text-gray-700 dark:text-gray-300">
                       {endTime}
                     </Text>
                   </View>
-
                   <Clock size={iconSize} color="gray" />
                 </TouchableOpacity>
               </View>
@@ -395,7 +390,6 @@ onSaved?.();
               <Text className="mb-1 text-gray-700 dark:text-gray-300">
                 Priority
               </Text>
-
               <TextInput
                 value={priority}
                 onChangeText={setPriority}
@@ -437,7 +431,6 @@ onSaved?.();
                 <View className="mt-2 overflow-hidden rounded-xl border border-gray-300 dark:border-gray-700">
                   {REFRESH_OPTIONS.map((item) => {
                     const selected = item.value === refreshSeconds;
-
                     return (
                       <TouchableOpacity
                         key={item.value}
@@ -467,25 +460,21 @@ onSaved?.();
                 </View>
               )}
             </View>
-
             {/* Enabled */}
             <View className="flex-row items-center justify-between rounded-lg border border-gray-300 bg-gray-100 p-4 dark:border-gray-700 dark:bg-[#252525]">
               <View className="flex-1 flex-row items-center pr-3">
                 <View className="h-10 w-10 items-center justify-center rounded-lg bg-gray-200 dark:bg-[#333]">
                   <ToggleRight size={iconSize} color="#6B7280" />
                 </View>
-
                 <View className="ml-3 flex-1">
                   <Text className="font-medium text-gray-900 dark:text-white">
                     Enable this item
                   </Text>
-
                   <Text className="mt-1 text-xs text-gray-500">
                     Show on device when active
                   </Text>
                 </View>
               </View>
-
               <Switch
                 value={isEnabled}
                 onValueChange={setIsEnabled}
@@ -534,7 +523,6 @@ onSaved?.();
           display="default"
           onChange={(event, date) => {
             setShowStartPicker(false);
-
             if (event.type === "set" && date) {
               setStartTime(dateToTime(date));
             }
@@ -551,7 +539,6 @@ onSaved?.();
           display="default"
           onChange={(event, date) => {
             setShowEndPicker(false);
-
             if (event.type === "set" && date) {
               setEndTime(dateToTime(date));
             }

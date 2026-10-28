@@ -186,20 +186,37 @@ const vAlign = className.includes("item--vcenter") ? "center" : undefined;
 item.querySelectorAll(".ep-image-wrap").forEach((wrap: any) => { const img = wrap.querySelector("img"); if (!img) return; const src = img.getAttribute("src") || img.getAttribute("data-src") || img.getAttribute("data-lazy-src"); if (!src) { console.warn("[COMPILE IMAGE] Image has no src", wrap.toString()); return; } const widthAttr = img.getAttribute("width"); const heightAttr = img.getAttribute("height"); const overlay = wrap.querySelector(".ep-image-overlay"); const overlayIcon = overlay?.querySelector("img"); const imageNode: EpNode = { type: "image", src: src.trim(), width: widthAttr ? Number(widthAttr) : undefined, height: heightAttr ? Number(heightAttr) : undefined, overlayText: overlay?.querySelector("span")?.textContent.trim() || undefined, overlayImage: overlayIcon?.getAttribute("src") || undefined, }; console.log("[COMPILE IMAGE] Parsed image node", imageNode); children.push(imageNode); });
 
 
-  item.querySelectorAll("iframe").forEach((frame: any) => {
-    const src = frame.getAttribute("src");
-    if (!src) {
-      throw new LTError("IFRAME_NO_SRC", "Iframe requires src attribute");
-    }
-    const widthAttr = frame.getAttribute("width");
-    const heightAttr = frame.getAttribute("height");
-    children.push({
-      type: "iframe",
-      src,
-      width: widthAttr ? parseInt(widthAttr, 10) : undefined,
-      height: heightAttr ? parseInt(heightAttr, 10) : undefined,
-    });
+
+item.querySelectorAll("iframe").forEach((frame: any) => {
+  const src =
+    frame.getAttribute("src")?.trim() ||
+    frame.getAttribute("data-src")?.trim() ||
+    frame.getAttribute("data-lazy-src")?.trim() ||
+    frame.getAttribute("data-original")?.trim();
+
+  if (!src) {
+    console.warn(
+      "[COMPILE IFRAME] Skipping iframe without a URL:",
+      frame.toString()
+    );
+    return;
+  }
+
+  const widthAttr = frame.getAttribute("width");
+  const heightAttr = frame.getAttribute("height");
+
+  children.push({
+    type: "iframe",
+    src,
+    width: widthAttr
+      ? parseInt(widthAttr, 10)
+      : undefined,
+    height: heightAttr
+      ? parseInt(heightAttr, 10)
+      : undefined,
   });
+});
+
 return {
   type: "block",
   full,

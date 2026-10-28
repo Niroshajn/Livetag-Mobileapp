@@ -389,8 +389,15 @@ export default function PlaylistPlaygroundScreen({
   const [compileError, setCompileError] =
     useState<string | null>(null);
 
-  const [openInstanceId, setOpenInstanceId] =
-    useState<string | null>(null);
+const [openInstanceId, setOpenInstanceId] = useState<string | null>(
+  playgroundInstances[0]?.id ?? null
+);
+
+useEffect(() => {
+  if (playgroundInstances.length > 0) {
+    setOpenInstanceId(playgroundInstances[0].id);
+  }
+}, [playgroundInstances]);
 
   const [orientation, setOrientation] =
     useState<Orientation>(
@@ -2046,7 +2053,7 @@ case "stat": {
         ) : null}
       </View>
 
-      <View className="min-h-[52px] flex-row items-center justify-between border-b border-[#dddddd] bg-white px-3">
+      {/* <View className="min-h-[52px] flex-row items-center justify-between border-b border-[#dddddd] bg-white px-3">
         <View>
           <Text className="font-mono text-[11px] text-[#666666]">
             {orientedDevice.width} ×{" "}
@@ -2109,7 +2116,7 @@ case "stat": {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </View> */}
 
       {/* ====================================================
           MAIN
@@ -2200,7 +2207,7 @@ case "stat": {
             DEVICES
         ================================================== */}
 
-        {devices.length > 0 && (
+        {/* {devices.length > 0 && (
           <View className="border-b border-[#dddddd] bg-white p-3">
             <Text
   bold
@@ -2240,7 +2247,7 @@ case "stat": {
               ))}
             </ScrollView>
           </View>
-        )}
+        )} */}
 
         {/* ==================================================
             SETTINGS
@@ -2297,7 +2304,7 @@ case "stat": {
             DATA CONTEXT
         ================================================== */}
 
-        <Pressable
+        {/* <Pressable
           onPress={() =>
             setDataContextExpanded(
               (value) => !value
@@ -2317,7 +2324,7 @@ case "stat": {
               ? "▲"
               : "▼"}
           </Text>
-        </Pressable>
+        </Pressable> */}
 
         {dataContextExpanded && (
           <ScrollView
