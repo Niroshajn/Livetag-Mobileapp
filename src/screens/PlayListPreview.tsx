@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-
+import { useColorScheme } from "nativewind";
 import {
   ActivityIndicator,
   Alert,
@@ -319,7 +319,8 @@ export default function PlaylistPlaygroundScreen({
   route,
 }: Props) {
     const [keyboardVisible, setKeyboardVisible] = useState(false);
-
+const { colorScheme } = useColorScheme();
+const isDark = colorScheme === "dark";
   useEffect(() => {
     const showEvent =
       Platform.OS === "ios"
@@ -1967,382 +1968,366 @@ case "stat": {
      UI
   ========================================================== */
 
-  return (
- <SafeAreaView className="flex-1 bg-[#f5f5f5]">
-  <KeyboardAvoidingView
-    style={{ flex: 1 }}
-    behavior={Platform.OS === "ios" ? "padding" : "height"}
-    keyboardVerticalOffset={0}
+
+return (
+  <SafeAreaView
+    className="flex-1 bg-[#f5f5f5] dark:bg-[#111111]"
+    edges={["top", "left", "right"]}
   >
-      <View className="flex-1 bg-[#f5f5f5]">
-      <View className="min-h-[64px] flex-row items-center border-b border-[#dddddd] bg-white px-4 py-2.5">
-        <View className="flex-1 pr-2.5">
-          <Text
-          bold
-            numberOfLines={1}
-            className="text-[15px]  text-[#111111]"
-          >
-            {plugin.pluginName}
-          </Text>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0}
+    >
+      <View className="flex-1 bg-[#f5f5f5] dark:bg-[#111111]">
 
-          <Text
-            numberOfLines={1}
-            className="mt-[3px] text-[11px] text-[#777777]"
-          >
-            {plugin.pluginDescription ??
-              "No description"}
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          onPress={execute}
-          disabled={
-            !hasChanges ||
-            isExecuting
-          }
-          className={`h-8 min-w-[80px] items-center justify-center rounded-[6px] border border-[#1683ff] px-3.5 ${
-            !hasChanges ||
-            isExecuting
-              ? "opacity-50"
-              : ""
-          }`}
-        >
-          {isExecuting ? (
-            <ActivityIndicator
-              color="#ffffff"
-              size="small"
-            />
-          ) : (
-            <Text bold className="text-[12px]  text-[#1683ff]">
-              Execute
+        {/* ================= HEADER ================= */}
+        <View className="
+          min-h-[64px] flex-row items-center
+          border-b border-[#dddddd] dark:border-gray-700
+          bg-white dark:bg-[#1C1C1E]
+          px-4 py-2.5
+        ">
+          <View className="flex-1 pr-2.5">
+            <Text
+              bold
+              numberOfLines={1}
+              className="text-[15px] text-[#111111] dark:text-white"
+            >
+              {plugin.pluginName}
             </Text>
-          )}
-               </TouchableOpacity>
 
-        {/* UPDATE TO PLAYLIST BUTTON */}
-        {playlistItemId ? (
-            <TouchableOpacity
-    onPress={handleUpdatePlaylist}
-    disabled={isUpdatingPlaylist}
-    className={`ml-1 h-8 flex-row items-center justify-center rounded-[4px] border border-[#1683ff] px-2 ${
-      isUpdatingPlaylist ? "opacity-50" : ""
-    }`}
-  >
-            {isUpdatingPlaylist ? (
-              <>
-                <ActivityIndicator
-                  color="#ffffff"
-                  size="small"
-                />
-                <Text
-                  bold
-                  className="ml-2 text-[11px] text-[#1683ff]"
-                >
-                  Updating...
-                </Text>
-              </>
+            <Text
+              numberOfLines={1}
+              className="mt-[3px] text-[11px] text-[#777777] dark:text-gray-400"
+            >
+              {plugin.pluginDescription ?? "No description"}
+            </Text>
+          </View>
+
+          {/* EXECUTE BUTTON */}
+          <TouchableOpacity
+            onPress={execute}
+            disabled={!hasChanges || isExecuting}
+            className={`
+              h-8 min-w-[80px] items-center justify-center
+              rounded-[6px] border border-[#1683ff]
+              bg-white dark:bg-[#252527]
+              px-3.5
+              ${!hasChanges || isExecuting ? "opacity-50" : ""}
+            `}
+          >
+            {isExecuting ? (
+              <ActivityIndicator
+                color={isDark ? "#60A5FA" : "#1683ff"}
+                size="small"
+              />
             ) : (
-              <Text
-                bold
-                className="text-[11px] text-[#1683ff]"
-              >
-                Update to Playlist
+              <Text bold className="text-[12px] text-[#1683ff]">
+                Execute
               </Text>
             )}
           </TouchableOpacity>
-        ) : null}
-      </View>
 
-      {/* <View className="min-h-[52px] flex-row items-center justify-between border-b border-[#dddddd] bg-white px-3">
-        <View>
-          <Text className="font-mono text-[11px] text-[#666666]">
-            {orientedDevice.width} ×{" "}
-            {orientedDevice.height}
-          </Text>
-
-          <Text className="mt-[3px] text-[9px] capitalize text-[#999999]">
-            {orientation}
-          </Text>
+          {/* UPDATE TO PLAYLIST */}
+          {playlistItemId ? (
+            <TouchableOpacity
+              onPress={handleUpdatePlaylist}
+              disabled={isUpdatingPlaylist}
+              className={`
+                ml-1 h-8 flex-row items-center justify-center
+                rounded-[4px] border border-[#1683ff]
+                bg-white dark:bg-[#252527]
+                px-2
+                ${isUpdatingPlaylist ? "opacity-50" : ""}
+              `}
+            >
+              {isUpdatingPlaylist ? (
+                <>
+                  <ActivityIndicator
+                    color={isDark ? "#60A5FA" : "#1683ff"}
+                    size="small"
+                  />
+                  <Text
+                    bold
+                    className="ml-2 text-[11px] text-[#1683ff]"
+                  >
+                    Updating...
+                  </Text>
+                </>
+              ) : (
+                <Text
+                  bold
+                  className="text-[11px] text-[#1683ff]"
+                >
+                  Update to Playlist
+                </Text>
+              )}
+            </TouchableOpacity>
+          ) : null}
         </View>
 
-        <View className="flex-row overflow-hidden rounded-[6px] border border-[#dddddd]">
-          <TouchableOpacity
-            onPress={() =>
-              changeOrientation(
-                "landscape"
-              )
-            }
-            className={`bg-white px-2.5 py-1.5 ${
-              orientation ===
-              "landscape"
-                ? "bg-[#2563eb]"
-                : ""
-            }`}
-          >
-            <Text bold
-              className={`text-[10px] ${
-                orientation ===
-                "landscape"
-                  ? " text-white"
-                  : "text-[#666666]"
-              }`}
-            >
-              Landscape
+        {/* ================= ORIENTATION ================= */}
+        {/*
+        <View className="
+          min-h-[52px] flex-row items-center justify-between
+          border-b border-[#dddddd] dark:border-gray-700
+          bg-white dark:bg-[#1C1C1E] px-3
+        ">
+          <View>
+            <Text className="font-mono text-[11px] text-[#666666] dark:text-gray-300">
+              {orientedDevice.width} × {orientedDevice.height}
             </Text>
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() =>
-              changeOrientation(
-                "portrait"
-              )
-            }
-            className={`bg-white px-2.5 py-1.5 ${
-              orientation ===
-              "portrait"
-                ? "bg-[#2563eb]"
-                : ""
-            }`}
-          >
-            <Text bold
-              className={`text-[10px] ${
-                orientation ===
-                "portrait"
-                  ? " text-white"
-                  : "text-[#666666]"
+            <Text className="mt-[3px] text-[9px] capitalize text-[#999999] dark:text-gray-400">
+              {orientation}
+            </Text>
+          </View>
+
+          <View className="flex-row overflow-hidden rounded-[6px] border border-[#dddddd] dark:border-gray-600">
+            <TouchableOpacity
+              onPress={() => changeOrientation("landscape")}
+              className={`px-2.5 py-1.5 ${
+                orientation === "landscape"
+                  ? "bg-[#2563eb]"
+                  : "bg-white dark:bg-[#252527]"
               }`}
             >
-              Portrait
-            </Text>
-          </TouchableOpacity>
+              <Text
+                bold
+                className={`text-[10px] ${
+                  orientation === "landscape"
+                    ? "text-white"
+                    : "text-[#666666] dark:text-gray-300"
+                }`}
+              >
+                Landscape
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => changeOrientation("portrait")}
+              className={`px-2.5 py-1.5 ${
+                orientation === "portrait"
+                  ? "bg-[#2563eb]"
+                  : "bg-white dark:bg-[#252527]"
+              }`}
+            >
+              <Text
+                bold
+                className={`text-[10px] ${
+                  orientation === "portrait"
+                    ? "text-white"
+                    : "text-[#666666] dark:text-gray-300"
+                }`}
+              >
+                Portrait
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View> */}
+        */}
 
-      {/* ====================================================
-          MAIN
-      ==================================================== */}
+        {/* ================= MAIN ================= */}
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{
+            paddingBottom: keyboardVisible ? 24 : 40,
+            flexGrow: 1,
+          }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === "ios" ? "interactive" : "on-drag"
+          }
+          automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+          nestedScrollEnabled
+          showsVerticalScrollIndicator={false}
+        >
 
-  
-    <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{
-          paddingBottom: keyboardVisible ? 24 : 40,
-          flexGrow: 1,
-        }}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode={
-          Platform.OS === "ios" ? "interactive" : "on-drag"
-        }
-        automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
-        nestedScrollEnabled
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ==================================================
-            PREVIEW
-        ================================================== */}
+          {/* ================= PREVIEW ================= */}
+          <View className="
+            min-h-[280px] items-center justify-center
+            bg-[#e5e5e5] dark:bg-[#252527]
+            p-3
+          ">
+            <Text
+              bold
+              className="mb-2 self-start text-[13px] text-[#222222] dark:text-white"
+            >
+              Preview
+            </Text>
 
-        <View className="min-h-[280px] items-center justify-center bg-[#e5e5e5] p-3">
-          <Text className="mb-2 self-start text-[13px] font-bold text-[#222222]">
-            Preview
-          </Text>
-
-          <View
-            className="overflow-hidden rounded-[1px] bg-white"
-            style={{
-              width: scaledWidth,
-              height: scaledHeight,
-            }}
-          >
+            {/* DEVICE CANVAS - ALWAYS WHITE */}
             <View
-              className="overflow-hidden bg-white"
+              className="overflow-hidden rounded-[1px] bg-white"
               style={{
-                width:
-                  orientedDevice.width,
-
-                height:
-                  orientedDevice.height,
-
-                transform: [
-                  {
-                    scale,
-                  },
-                ],
-
-                transformOrigin:
-                  "top left",
+                width: scaledWidth,
+                height: scaledHeight,
               }}
             >
-              {compileError ? (
-                <View className="flex-1 items-center justify-center bg-[#fff5f5] p-5">
-                 <Text
-  bold
-  className="mb-1.5 text-[14px] text-[#dc2626]"
->
-  Compile Error
-</Text>
+              <View
+                className="overflow-hidden bg-white"
+                style={{
+                  width: orientedDevice.width,
+                  height: orientedDevice.height,
+                  transform: [{ scale }],
+                  transformOrigin: "top left",
+                }}
+              >
+                {compileError ? (
+                  <View className="
+                    flex-1 items-center justify-center
+                    bg-[#fff5f5] p-5
+                  ">
+                    <Text
+                      bold
+                      className="mb-1.5 text-[14px] text-[#dc2626]"
+                    >
+                      Compile Error
+                    </Text>
 
-                  <Text className="text-center text-[11px] text-[#ef4444]">
-                    {compileError}
-                  </Text>
-                </View>
-              ) : epuiTree ? (
-                renderEpNode(
-                  epuiTree,
-                  "root"
-                )
-              ) : (
-                <View className="flex-1 items-center justify-center">
-                  <ActivityIndicator />
+                    <Text className="text-center text-[11px] text-[#ef4444]">
+                      {compileError}
+                    </Text>
+                  </View>
+                ) : epuiTree ? (
+                  renderEpNode(epuiTree, "root")
+                ) : (
+                  <View className="flex-1 items-center justify-center bg-white">
+                    <ActivityIndicator
+                      color={isDark ? "#60A5FA" : "#2563EB"}
+                    />
 
-                  <Text className="mt-2 text-[12px] text-[#999999]">
-                    Loading preview...
-                  </Text>
-                </View>
-              )}
+                    <Text className="mt-2 text-[12px] text-[#999999]">
+                      Loading preview...
+                    </Text>
+                  </View>
+                )}
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* ==================================================
-            DEVICES
-        ================================================== */}
-
-        {/* {devices.length > 0 && (
-          <View className="border-b border-[#dddddd] bg-white p-3">
-            <Text
-  bold
-  className="mb-2.5 text-[12px] uppercase text-[#555555]"
->
-  Devices
-</Text>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={
-                false
-              }
+          {/* ================= DEVICES ================= */}
+          {/*
+          {devices.length > 0 && (
+            <View className="
+              border-b border-[#dddddd] dark:border-gray-700
+              bg-white dark:bg-[#1C1C1E] p-3
             >
-              {devices.map((item) => (
-                <TouchableOpacity
-                  key={item.displayId}
-                  onPress={() =>
-                    changeDevice(item)
-                  }
-                  className="mr-2 rounded-[6px] border border-[#dddddd] bg-white px-3 py-2"
-                >
-                  <Text bold className="text-[11px]  text-[#222222]">
-                    {item.modelNo}
-                  </Text>
+              <Text
+                bold
+                className="mb-2.5 text-[12px] uppercase text-[#555555] dark:text-gray-300"
+              >
+                Devices
+              </Text>
 
-                  <Text className="mt-[3px] text-[10px] text-[#888888]">
-                    {
-                      item.displayResolutionWidth
-                    }{" "}
-                    ×{" "}
-                    {
-                      item.displayResolutionHeight
-                    }
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )} */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {devices.map((item) => (
+                  <TouchableOpacity
+                    key={item.displayId}
+                    onPress={() => changeDevice(item)}
+                    className="
+                      mr-2 rounded-[6px]
+                      border border-[#dddddd] dark:border-gray-600
+                      bg-white dark:bg-[#252527]
+                      px-3 py-2
+                    "
+                  >
+                    <Text bold className="text-[11px] text-[#222222] dark:text-white">
+                      {item.modelNo}
+                    </Text>
 
-        {/* ==================================================
-            SETTINGS
-        ================================================== */}
+                    <Text className="mt-[3px] text-[10px] text-[#888888] dark:text-gray-400">
+                      {item.displayResolutionWidth} × {item.displayResolutionHeight}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+          */}
 
-        <View className="bg-white p-3">
-          <Text bold className="mb-2.5 text-[12px] uppercase text-[#555555]">
-            Settings
-          </Text>
+          {/* ================= SETTINGS ================= */}
+          <View className="
+            bg-white dark:bg-[#1C1C1E]
+            p-3
+          ">
+            <Text
+              bold
+              className="
+                mb-2.5 text-[12px] uppercase
+                text-[#555555] dark:text-gray-300
+              "
+            >
+              Settings
+            </Text>
 
-          {playgroundInstances.map(
-            (instance) => (
+            {playgroundInstances.map((instance) => (
               <ConnectorCard
                 key={instance.id}
                 mode="playground"
-                sessionId={
-                  playgroundSessionId ??
-                  ""
-                }
+                sessionId={playgroundSessionId ?? ""}
                 instance={instance}
                 connectors={connectors}
-                openInstanceId={
-                  openInstanceId
-                }
-                setOpenInstanceId={
-                  setOpenInstanceId
-                }
-                onStartOAuth={
-                  startOAuth
-                }
-                onConfigChange={
-                  updateConnector
-                }
-                onDisconnect={
-                  disconnect
-                }
-                cropAspect={
-                  deviceWidth /
-                  deviceHeight
-                }
+                openInstanceId={openInstanceId}
+                setOpenInstanceId={setOpenInstanceId}
+                onStartOAuth={startOAuth}
+                onConfigChange={updateConnector}
+                onDisconnect={disconnect}
+                cropAspect={deviceWidth / deviceHeight}
               />
-            )
-          )}
+            ))}
 
-          {playgroundInstances.length ===
-            0 && (
-            <Text className="py-5 text-center text-[11px] text-[#999999]">
-              No settings configured
-            </Text>
-          )}
-        </View>
+            {playgroundInstances.length === 0 && (
+              <Text className="
+                py-5 text-center text-[11px]
+                text-[#999999] dark:text-gray-400
+              ">
+                No settings configured
+              </Text>
+            )}
+          </View>
 
-        {/* ==================================================
-            DATA CONTEXT
-        ================================================== */}
-
-        {/* <Pressable
-          onPress={() =>
-            setDataContextExpanded(
-              (value) => !value
-            )
-          }
-          className="min-h-[46px] flex-row items-center border-b border-t border-[#dddddd] bg-white px-3"
-        >
-          <Text
-  bold
-  className="text-[12px] uppercase text-[#555555]"
->
-  Data Context
-</Text>
-
-          <Text className="ml-auto text-[11px] text-[#777777]">
-            {dataContextExpanded
-              ? "▲"
-              : "▼"}
-          </Text>
-        </Pressable> */}
-
-        {dataContextExpanded && (
-          <ScrollView
-            horizontal
-            className="max-h-[350px] bg-[#111111] p-3"
+          {/* ================= DATA CONTEXT ================= */}
+          {/*
+          <Pressable
+            onPress={() =>
+              setDataContextExpanded((value) => !value)
+            }
+            className="
+              min-h-[46px] flex-row items-center
+              border-b border-t border-[#dddddd] dark:border-gray-700
+              bg-white dark:bg-[#1C1C1E] px-3
+            "
           >
-            <Text className="font-mono text-[10px] text-[#eeeeee]">
-              {JSON.stringify(
-                dataContext,
-                null,
-                2
-              )}
+            <Text
+              bold
+              className="text-[12px] uppercase text-[#555555] dark:text-gray-300"
+            >
+              Data Context
             </Text>
-          </ScrollView>
-        )}
-         </ScrollView>
+
+            <Text className="ml-auto text-[11px] text-[#777777] dark:text-gray-400">
+              {dataContextExpanded ? "▲" : "▼"}
+            </Text>
+          </Pressable>
+          */}
+
+          {dataContextExpanded && (
+            <ScrollView
+              horizontal
+              className="max-h-[350px] bg-[#111111] p-3"
+            >
+              <Text className="font-mono text-[10px] text-[#eeeeee]">
+                {JSON.stringify(dataContext, null, 2)}
+              </Text>
+            </ScrollView>
+          )}
+
+        </ScrollView>
       </View>
     </KeyboardAvoidingView>
   </SafeAreaView>
-  );
+);
+
 }

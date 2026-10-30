@@ -38,29 +38,34 @@ export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
   ForgotPassword: undefined;
+  ResetPassword: { token: string } | undefined;
+
   Dashboard: undefined;
   Frame: undefined;
   Apps: undefined;
   Account: undefined;
   Logout: undefined;
   Help: undefined;
+
   PreviewPage: {
-  pluginId: string;
-  pluginName: string;
-  pluginDescription?: string;
+    pluginId: string;
+    pluginName: string;
+    pluginDescription?: string;
   };
+
   PlayList: { id: string };
+
   PlayListPreview: {
     pluginId: string;
     pluginName: string;
     pluginDescription?: string;
   };
+
   TermsOfService: undefined;
   PrivacyPolicy: undefined;
   EmailVerification: { email: string };
   EmailVerificationFailed: { email: string };
 };
-
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {

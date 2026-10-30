@@ -1,178 +1,223 @@
+
 import React from "react";
-import { View, Text, ScrollView, Linking } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Linking,
+  TouchableOpacity,
+} from "react-native";
 
 export default function PrivacyPolicyScreen() {
-    return (
-        <ScrollView className="flex-1 bg-gray-50 dark:bg-black">
-            <View className="max-w-4xl mx-auto px-6 py-10">
-                {/* Title */}
-                <Text className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                    Privacy Policy
-                </Text>
-                <Text className="text-xs text-gray-500 mb-8">
-                    Effective Date: 01 Oct 2025
-                </Text>
-                {/* Intro */}
-                <View className="mb-6">
-                    <Text className="text-gray-700 dark:text-gray-300 leading-5">
-                        Welcome to <Text className="font-bold">Livetag Technologies</Text>. We are
-                        committed to protecting your privacy and ensuring transparency in how your
-                        data is handled across our e-paper display systems, dashboards, and
-                        connected platforms.
-                    </Text>
-                </View>
-                {/* 1 */}
-                <Section title="1. Information We Collect">
-                    <View>
-                        <Text className="text-gray-700 dark:text-gray-300">• Personal details (name, email, phone, company)</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• Account and authentication data</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• Device identifiers (Frame ID, IP address)</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• Uploaded content (images, media, schedules)</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• Usage analytics and logs</Text>
-                    </View>
-                </Section>
-                {/* 2 */}
-                <Section title="2. How We Use Your Data">
-                    <View>
-                        <Text className="text-gray-700 dark:text-gray-300">• Service delivery and device synchronization</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• User authentication and access control</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• Platform performance optimization</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• Security and fraud prevention</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• Customer support and communication</Text>
-                    </View>
-                </Section>
-                {/* 3 */}
-                <Section title="3. GDPR Compliance (EU Users)">
-                    <Text className="text-gray-700 dark:text-gray-300 mb-2">
-                        If you are located in the European Economic Area (EEA), we process your
-                        data under lawful bases:
-                    </Text>
-                     <View className="mb-4"> 
-                        <Text className="text-gray-700 dark:text-gray-300 mb-1">• Consent (Article 6(1)(a))</Text>
-                        <Text className="text-gray-700 dark:text-gray-300 mb-1">• Contractual necessity (Article 6(1)(b))</Text>
-                        <Text className="text-gray-700 dark:text-gray-300 mb-1">• Legal obligation (Article 6(1)(c))</Text>
-                        <Text className="text-gray-700 dark:text-gray-300 mb-1">• Legitimate interests (Article 6(1)(f))</Text>
-                    </View>{"\n"}
+  const openEmail = async () => {
+    try {
+      await Linking.openURL("mailto:ping@livetag.in");
+    } catch (error) {
+      console.warn("Unable to open email app:", error);
+    }
+  };
 
-                    <Text className="text-gray-900 font-bold dark:text-gray-300 mt-3">
-                        Your GDPR rights include:
-                    </Text>{"\n"}
+  return (
+    <ScrollView
+      className="flex-1 bg-gray-50 dark:bg-black"
+      contentContainerStyle={{ flexGrow: 1 }}
+      showsVerticalScrollIndicator={false}
+    >
+      <View className="w-full max-w-4xl self-center px-6 py-8">
+        {/* Title */}
+        <Text className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
+          Privacy Policy
+        </Text>
 
-                    <View className="mt-2">
-                        <Text className="text-gray-700 dark:text-gray-300">• Right to access</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• Right to rectification</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• Right to erasure</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• Right to data portability</Text>
-                        <Text className="text-gray-700 dark:text-gray-300 mb-2">• Right to restrict processing</Text>
-                    </View>
-                </Section>  
-                {/* 4 */}
-                <Section title="4. India DPDP Act, 2023 Compliance">
-                    <Text className="text-gray-700 dark:text-gray-300 mb-2">
-                        We act as a Data Fiduciary under the DPDP Act, 2023.
-                    </Text>
+        <Text className="mb-8 text-xs text-gray-500 dark:text-gray-400">
+          Effective Date: 01 Oct 2025
+        </Text>
 
-                    <View>
-                        <Text className="text-gray-700 dark:text-gray-300">• Data processed only for specified purposes</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• Consent obtained where required</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• Users can request correction or deletion</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• Security safeguards implemented</Text>
-                    </View>{"\n"}
+        {/* Introduction */}
+        <View className="mb-6">
+          <Text className="text-base leading-6 text-gray-700 dark:text-gray-300">
+            Welcome to{" "}
+            <Text className="font-bold">Livetag Technologies</Text>. We are
+            committed to protecting your privacy and ensuring transparency in
+            how your data is handled across our e-paper display systems,
+            dashboards, and connected platforms.
+          </Text>
+        </View>
 
-                    <Text className="text-gray-700 dark:text-gray-300 mt-2">
-                        You may contact us to exercise your rights.
-                    </Text>
-                </Section>
+        {/* 1. Information We Collect */}
+        <Section title="1. Information We Collect">
+          <Bullet>Personal details (name, email, phone, company)</Bullet>
+          <Bullet>Account and authentication data</Bullet>
+          <Bullet>Device identifiers (Frame ID, IP address)</Bullet>
+          <Bullet>Uploaded content (images, media, schedules)</Bullet>
+          <Bullet>Usage analytics and logs</Bullet>
+        </Section>
 
-                {/* 5 */}
-                <Section title="5. Data Sharing">
-                    <Text className="text-gray-700 dark:text-gray-300">
-                        We do not sell personal data. We may share it with trusted providers or
-                        legal authorities when required.
-                    </Text>
-                </Section>
+        {/* 2. How We Use Your Data */}
+        <Section title="2. How We Use Your Data">
+          <Bullet>Service delivery and device synchronization</Bullet>
+          <Bullet>User authentication and access control</Bullet>
+          <Bullet>Platform performance optimization</Bullet>
+          <Bullet>Security and fraud prevention</Bullet>
+          <Bullet>Customer support and communication</Bullet>
+        </Section>
 
-                {/* 6 */}
-                <Section title="6. Data Retention">
-                    <Text className="text-gray-700 dark:text-gray-300">
-                        We retain data only as long as necessary for service, compliance, and
-                        dispute resolution.
-                    </Text>
-                </Section>
+        {/* 3. GDPR Compliance */}
+        <Section title="3. GDPR Compliance (EU Users)">
+          <Text className="mb-3 text-base leading-6 text-gray-700 dark:text-gray-300">
+            If you are located in the European Economic Area (EEA), we process
+            your data under applicable lawful bases, which may include:
+          </Text>
 
-                {/* 7 */}
-                <Section title="7. Data Security">
-                    <View>
-                        <Text className="text-gray-700 dark:text-gray-300">• Encryption of sensitive data</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• Secure APIs and authentication</Text>
-                        <Text className="text-gray-700 dark:text-gray-300">• Role-based access control (RBAC)</Text>
-                    </View>
-                </Section>
+          <Bullet>Consent (Article 6(1)(a))</Bullet>
+          <Bullet>Contractual necessity (Article 6(1)(b))</Bullet>
+          <Bullet>Legal obligation (Article 6(1)(c))</Bullet>
+          <Bullet>Legitimate interests (Article 6(1)(f))</Bullet>
 
-                {/* 8 */}
-                <Section title="8. Cookies & Tracking">
-                    <Text className="text-gray-700 dark:text-gray-300">
-                        We use cookies to improve experience and analyze usage. You can manage
-                        preferences in settings.
-                    </Text>
-                </Section>
+          <Text className="mb-2 mt-4 text-base font-bold text-gray-900 dark:text-white">
+            Your GDPR rights include:
+          </Text>
 
-                {/* 9 */}
-                <Section title="9. Third-Party Services">
-                    <Text className="text-gray-700 dark:text-gray-300">
-                        External integrations may have their own privacy policies.
-                    </Text>
-                </Section>
+          <Bullet>Right to access</Bullet>
+          <Bullet>Right to rectification</Bullet>
+          <Bullet>Right to erasure</Bullet>
+          <Bullet>Right to data portability</Bullet>
+          <Bullet>Right to restrict processing</Bullet>
+        </Section>
 
-                {/* 10 */}
-                <Section title="10. Policy Updates">
-                    <Text className="text-gray-700 dark:text-gray-300">
-                        We may update this policy. Continued use means acceptance of changes.
-                    </Text>
-                </Section>
+        {/* 4. India DPDP Act */}
+        <Section title="4. India DPDP Act, 2023 Compliance">
+          <Text className="mb-3 text-base leading-6 text-gray-700 dark:text-gray-300">
+            We act as a Data Fiduciary under the DPDP Act, 2023, where
+            applicable.
+          </Text>
 
-                <Section title="11. Contact Us">
-                    Livetag Technologies{"\n"}
+          <Bullet>Data processed for specified purposes</Bullet>
+          <Bullet>Consent obtained where required</Bullet>
+          <Bullet>Users can request correction or deletion, subject to applicable law</Bullet>
+          <Bullet>Security safeguards implemented</Bullet>
 
-                    <Text
-                        className="text-blue-500"
-                        onPress={() => Linking.openURL("mailto:ping@livetag.in")}
-                    >
-                        ping@livetag.in
-                    </Text>{"\n"}
+          <Text className="mt-3 text-base leading-6 text-gray-700 dark:text-gray-300">
+            You may contact us to exercise your rights.
+          </Text>
+        </Section>
 
-                    Address: LIVETAG TECHNOLOGIES LLP {"\n"}
-                    INNOV8 SKCL TECH SQUARE GUINDY {"\n"}
-                    INDUSTRIAL ESTATE GUINDY {"\n"}
-                    CHENNAI 600032
+        {/* 5. Data Sharing */}
+        <Section title="5. Data Sharing">
+          <Text className="text-base leading-6 text-gray-700 dark:text-gray-300">
+            We do not sell personal data. We may share it with trusted service
+            providers or legal authorities when required.
+          </Text>
+        </Section>
 
-                </Section>
+        {/* 6. Data Retention */}
+        <Section title="6. Data Retention">
+          <Text className="text-base leading-6 text-gray-700 dark:text-gray-300">
+            We retain data only as long as necessary for service delivery,
+            compliance, and dispute resolution.
+          </Text>
+        </Section>
 
-                {/* Footer */}
-                <Text className="text-xs text-gray-400 mt-10 text-center">
-                    © {new Date().getFullYear()} Livetag Technologies
-                </Text>
+        {/* 7. Data Security */}
+        <Section title="7. Data Security">
+          <Bullet>Encryption of sensitive data</Bullet>
+          <Bullet>Secure APIs and authentication</Bullet>
+          <Bullet>Role-based access control (RBAC)</Bullet>
+        </Section>
 
-            </View>
-        </ScrollView>
-    );
+        {/* 8. Cookies */}
+        <Section title="8. Cookies & Tracking">
+          <Text className="text-base leading-6 text-gray-700 dark:text-gray-300">
+            We use cookies to improve the user experience and analyze usage
+            where applicable. You can manage available preferences in settings.
+          </Text>
+        </Section>
+
+        {/* 9. Third-Party Services */}
+        <Section title="9. Third-Party Services">
+          <Text className="text-base leading-6 text-gray-700 dark:text-gray-300">
+            External integrations may have their own privacy policies. Please
+            review those policies when using third-party services.
+          </Text>
+        </Section>
+
+        {/* 10. Policy Updates */}
+        <Section title="10. Policy Updates">
+          <Text className="text-base leading-6 text-gray-700 dark:text-gray-300">
+            We may update this policy from time to time. We will communicate
+            changes where required by applicable law.
+          </Text>
+        </Section>
+
+        {/* 11. Contact Us */}
+        <View className="mb-6">
+          <Text className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+            11. Contact Us
+          </Text>
+
+          <Text className="text-base leading-6 text-gray-700 dark:text-gray-300">
+            Livetag Technologies
+          </Text>
+
+          <TouchableOpacity
+            onPress={openEmail}
+            accessibilityRole="link"
+            accessibilityLabel="Email ping@livetag.in"
+            className="self-start py-1"
+            activeOpacity={0.7}
+          >
+            <Text className="text-base text-blue-600 dark:text-blue-400">
+              ping@livetag.in
+            </Text>
+          </TouchableOpacity>
+
+          <Text className="text-base leading-6 text-gray-700 dark:text-gray-300">
+            Address: LIVETAG TECHNOLOGIES LLP{"\n"}
+            INNOV8 SKCL TECH SQUARE GUINDY{"\n"}
+            INDUSTRIAL ESTATE GUINDY{"\n"}
+            CHENNAI 600032
+          </Text>
+        </View>
+
+        {/* Footer */}
+        <Text className="mb-4 mt-4 text-center text-xs text-gray-400">
+          © {new Date().getFullYear()} Livetag Technologies
+        </Text>
+      </View>
+    </ScrollView>
+  );
 }
 
 function Section({
-    title,
-    children,
+  title,
+  children,
 }: {
-    title: string;
-    children: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
 }) {
-    return (
-        <View className="mb-6">
-            <Text className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {title}
-            </Text>
-            <Text className="text-gray-700 dark:text-gray-300 leading-5">
-                {children}
-            </Text>
-        </View>
-    );
+  return (
+    <View className="mb-6">
+      <Text className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+        {title}
+      </Text>
+
+      <View>{children}</View>
+    </View>
+  );
+}
+
+function Bullet({ children }: { children: React.ReactNode }) {
+  return (
+    <View className="mb-1 flex-row items-start">
+      <Text className="mr-2 text-base leading-6 text-gray-700 dark:text-gray-300">
+        {"\u2022"}
+      </Text>
+
+      <View className="flex-1">
+        <Text className="text-base leading-6 text-gray-700 dark:text-gray-300">
+          {children}
+        </Text>
+      </View>
+    </View>
+  );
 }

@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   TextInput,
@@ -7,82 +6,81 @@ import {
   ActivityIndicator,
   ScrollView,
   KeyboardAvoidingView,
-  Keyboard,
   Platform,
-  ToastAndroid,
   Alert,
+  ToastAndroid,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { ArrowLeft } from "lucide-react-native";
+
 import { RootStackParamList } from "../../App";
 import Text from "../components/AppText";
-import { SafeAreaView } from "react-native-safe-area-context";
+import api from "../lib/api";
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
+};
+
+type ForgotPasswordResponse = {
+  success?: boolean;
+  message?: string;
 };
 
 const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-
-  useEffect(() => {
-    const showEvent =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const showSubscription = Keyboard.addListener(showEvent, () => {
-      setKeyboardVisible(true);
-    });
-
-    const hideSubscription = Keyboard.addListener(hideEvent, () => {
-      setKeyboardVisible(false);
-    });
-
-    return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
-    };
-  }, []);
 
   const showMessage = (message: string) => {
     if (Platform.OS === "android") {
       ToastAndroid.show(message, ToastAndroid.SHORT);
     } else {
-      Alert.alert("", message);
+      Alert.alert("LIVETAG", message);
     }
-  };
-
-  const validate = () => {
-    const trimmedEmail = email.trim();
-
-    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setError("Please enter a valid email address");
-      return false;
-    }
-
-    setError("");
-    return true;
   };
 
   const handleReset = async () => {
-    if (loading || !validate()) return;
+    if (loading) return;
+
+    const trimmedEmail = email.trim();
+
+    // Validate email
+    if (!trimmedEmail) {
+      setError("Email is required");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(trimmedEmail)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
 
     try {
-      setLoading(true);
-      Keyboard.dismiss();
+      const response = await api.post<ForgotPasswordResponse>(
+        "/auth/forgot-password",
+        {
+          email: trimmedEmail,
+        }
+      );
 
-      // Keep your existing reset flow here.
-      // This timeout is only a placeholder; it does not send a reset email.
-      await new Promise<void>((resolve) => {
-        setTimeout(resolve, 1500);
-      });
+      showMessage(
+        response.data?.message || "Reset link sent to your email!"
+      );
 
-      showMessage("Please connect the password reset API.");
-    } catch (err) {
-      setError("Something went wrong");
+      navigation.navigate("Login");
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        "Failed to send reset link. Please try again.";
+
+      setError(message);
+      showMessage(message);
     } finally {
       setLoading(false);
     }
@@ -93,97 +91,116 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={0}
       >
         <ScrollView
-          style={{ flex: 1 }}
           contentContainerStyle={{
             flexGrow: 1,
-            justifyContent: keyboardVisible ? "flex-start" : "center",
+            justifyContent: "center",
             paddingHorizontal: 16,
-            paddingTop: keyboardVisible ? 12 : 24,
-            paddingBottom: 32,
+            paddingVertical: 24,
           }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={
             Platform.OS === "ios" ? "interactive" : "on-drag"
           }
           showsVerticalScrollIndicator={false}
-          nestedScrollEnabled
         >
           <View className="w-full items-center">
-            <View className="relative w-full max-w-md bg-white dark:bg-[#1a1a1a] p-6 rounded-lg border border-gray-200 dark:border-gray-800">
-              {/* BACK TO LOGIN */}
+            <View className="relative w-full max-w-md overflow-hidden rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-[#1a1a1a]">
+              {/* Back to Login */}
               <Pressable
                 onPress={() => navigation.navigate("Login")}
-                className="mb-4"
                 disabled={loading}
+                accessibilityRole="button"
+                className="mb-6 flex-row items-center gap-2 self-start"
               >
-                <Text className="text-gray-500 dark:text-gray-400">
-                  ← Back to Login
+                <ArrowLeft size={18} color="#9CA3AF" />
+
+                <Text className="text-sm text-gray-500 dark:text-gray-400">
+                  Back to Login
                 </Text>
               </Pressable>
 
-              {/* LOGO */}
-              <View className="flex-row items-center gap-2 mb-6">
-                <View className="w-5 h-6 items-center justify-center border border-blue-300 bg-gray-100 dark:bg-black">
-                  <Text className="text-xs text-gray-800 dark:text-gray-100">
+              {/* LIVETAG Logo */}
+              <View className="mb-6 flex-row items-center gap-2">
+                <View className="h-6 w-5 items-center justify-center border border-highlight bg-gray-100 dark:bg-black">
+                  <Text className="text-sm font-light text-gray-800 dark:text-gray-100">
                     #
                   </Text>
                 </View>
 
-                <Text className="text-lg font-semibold text-gray-900 dark:text-white">
+                <Text className="text-2xl font-semibold text-gray-900 dark:text-white">
                   LIVETAG
                 </Text>
               </View>
 
-              {/* TITLE TAG */}
-              <View className="absolute right-0 top-0 bg-gray-300 dark:bg-gray-700 px-3 py-1.5 rounded-b">
-                <Text className="text-sm text-gray-800 dark:text-white">
+              {/* Title */}
+              <View className="absolute right-0 top-0 rounded-b bg-gray-300 px-3 py-1.5 dark:bg-gray-700">
+                <Text className="text-sm font-medium text-gray-800 dark:text-white">
                   FORGOT PASSWORD
                 </Text>
               </View>
 
-              {/* DESCRIPTION */}
-              <Text className="text-gray-500 dark:text-gray-400 text-sm mb-4">
-                Enter your email to receive a reset link.
+              {/* Description */}
+              <Text className="mb-6 text-sm text-gray-500 dark:text-gray-400">
+                Enter your email address and we'll send you a link to reset
+                your password.
               </Text>
 
-              {error ? (
-                <Text className="text-red-500 text-sm mb-3">
-                  {error}
+              {/* Email */}
+              <View className="mb-5">
+                <Text className="mb-1.5 text-sm font-medium text-gray-600 dark:text-gray-300">
+                  Email Address
                 </Text>
-              ) : null}
 
-              {/* EMAIL */}
-              <TextInput
-                placeholder="Enter your email"
-                placeholderTextColor="#9CA3AF"
-                value={email}
-                onChangeText={(value) => {
-                  setEmail(value);
-                  if (error) setError("");
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={handleReset}
-                editable={!loading}
-                accessibilityLabel="Email address"
-                className="bg-gray-100 dark:bg-[#252525] text-black dark:text-white p-3 rounded-md border border-gray-300 dark:border-gray-700 mb-4"
-              />
+                <TextInput
+                  value={email}
+                  onChangeText={(value) => {
+                    setEmail(value);
+                    if (error) setError("");
+                  }}
+                  placeholder="Enter your email"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="email"
+                  textContentType="emailAddress"
+                  returnKeyType="done"
+                  onSubmitEditing={handleReset}
+                  editable={!loading}
+                  accessibilityLabel="Email address"
+                  className="rounded-md border border-gray-300 bg-gray-100 px-3 py-3 text-black dark:border-gray-700 dark:bg-[#252525] dark:text-white"
+                />
 
-              {/* SEND RESET LINK */}
+                {error ? (
+                  <Text className="mt-1.5 text-sm text-red-500">
+                    {error}
+                  </Text>
+                ) : null}
+              </View>
+
+              {/* Send Reset Link */}
               <Pressable
                 onPress={handleReset}
                 disabled={loading}
-                className="border border-gray-400 p-3 rounded-md items-center"
+                accessibilityRole="button"
+                className={`min-h-12 flex-row items-center justify-center rounded-md border border-gray-400 px-4 py-3 dark:border-gray-600 ${
+                  loading ? "opacity-60" : "active:opacity-70"
+                }`}
               >
                 {loading ? (
-                  <ActivityIndicator color="#9CA3AF" />
+                  <>
+                    <ActivityIndicator
+                      size="small"
+                      color="#9CA3AF"
+                    />
+                    <Text className="ml-2 text-center text-black dark:text-white">
+                      Sending...
+                    </Text>
+                  </>
                 ) : (
-                  <Text className="text-center text-black dark:text-white">
+                  <Text className="text-center font-medium text-black dark:text-white">
                     Send Reset Link
                   </Text>
                 )}

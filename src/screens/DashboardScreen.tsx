@@ -1,28 +1,35 @@
 import React, { useEffect, useState } from "react";
 import {
-  View, 
+  View,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
+  useWindowDimensions,
 } from "react-native";
-import Text from "../components/AppText";
+import { useNavigation } from "@react-navigation/native";
 import {
   Monitor,
   Wifi,
   WifiOff,
   Activity,
 } from "lucide-react-native";
+
+import Text from "../components/AppText";
 import api from "../lib/api";
 import AppLayout from "./Layout";
-import { Dimensions } from "react-native";
+
 /* ================= TYPES ================= */
 
 type Device = {
   id: string | number;
   name: string;
-  friendlyId?: string;
   updatedAt?: string;
-  sleepConfig?: {
-    updatedAt?: string;
+  friendlyId?: string;
+  status?: "online" | "offline";
+  telemetry?: {
+    battery?: string;
+    rssi?: string;
+    wifiSSID?: string;
   };
 };
 
@@ -30,90 +37,207 @@ type Plugin = {
   pluginId: number;
   pluginName: string;
   pluginIsEnabled: boolean;
+  pluginConfig?: any[];
 };
+
+type User = {
+  name: string;
+};
+
+function extractArray<T>(
+  response: any,
+  alternateKey: string
+): T[] {
+  const body = response?.data;
+
+  if (Array.isArray(body)) {
+    return body;
+  }
+
+  if (Array.isArray(body?.data)) {
+    return body.data;
+  }
+
+  if (Array.isArray(body?.[alternateKey])) {
+    return body[alternateKey];
+  }
+  return [];
+}
+
+// Same calculation as the web dashboard.
+function isDeviceOnline(updatedAt?: string): boolean {
+  if (!updatedAt) {
+    return false;
+  }
+
+  const now = new Date();
+  const lastUpdate = new Date(updatedAt);
+  const diffMs = now.getTime() - lastUpdate.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+  return diffHours < 24;
+}
+
+// Same last-seen calculation as the web dashboard.
+function timeAgo(date?: string): string {
+  if (!date) {
+    return "Never";
+  }
+  const diffMs = Date.now() - new Date(date).getTime();
+  if (!Number.isFinite(diffMs)) {
+    return "Never";
+  }
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  if (hours < 1) {
+    return "Just now";
+  }
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+
+  if (hour < 12) {
+    return "Good morning";
+  }
+
+  if (hour < 18) {
+    return "Good afternoon";
+  }
+
+  return "Good evening";
+}
 
 /* ================= COMPONENT ================= */
 
 export default function DashboardScreen() {
+  const navigation = useNavigation<any>();
+  const { width } = useWindowDimensions();
+
+  const iconSize = Math.max(20, Math.min(width * 0.05, 26));
+
   const [devices, setDevices] = useState<Device[]>([]);
   const [plugins, setPlugins] = useState<Plugin[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState({
+
+  const [user, setUser] = useState<User>({
     name: "",
   });
-  const { width } = Dimensions.get("window");
-  const iconSize = width * 0.05;
-  /* ================= HELPERS ================= */
-
-  const isOnline = (date?: string) => {
-    if (!date) return false;
-    const diff =
-      (Date.now() - new Date(date).getTime()) /
-      (1000 * 60 * 60);
-    return diff < 24;
-  };
-
-  const timeAgo = (date?: string) => {
-    if (!date) return "Never";
-    const diff = Date.now() - new Date(date).getTime();
-    const h = Math.floor(diff / (1000 * 60 * 60));
-    if (h < 1) return "Just now";
-    if (h < 24) return `${h}h ago`;
-    return `${Math.floor(h / 24)}d ago`;
-  };
-
-  const getGreeting = () => {
-    const h = new Date().getHours();
-    if (h < 12) return "Good morning";
-    if (h < 18) return "Good afternoon";
-    return "Good evening";
-  };
 
   /* ================= API ================= */
 
   useEffect(() => {
-    const fetchAll = async () => {
+    let mounted = true;
+
+    async function fetchAll() {
       try {
-        const deviceRes = await api.get("/frames");
-        const pluginRes = await api.get("/plugin/me");
-        const userRes = await api.get("/auth/user/me");
-        const userData = userRes.data?.userDetail ?? userRes.data;
-        setUser({
-          name: userData.name,
-        });
-        console.log("DEVICE API:", deviceRes.data);
-        console.log("PLUGIN API:", pluginRes.data);
-        const deviceData = Array.isArray(deviceRes.data)
-          ? deviceRes.data
-          : deviceRes.data?.frames ?? [];
-        const pluginData = Array.isArray(pluginRes.data)
-          ? pluginRes.data
-          : pluginRes.data?.plugins ?? [];
-        setDevices(deviceData);
-        setPlugins(pluginData);
-      } catch (e: any) {
-        console.log("API ERROR:", e);
-        console.log("STATUS:", e.response?.status);
-        console.log("ERROR DATA:", e.response?.data);
-        setDevices([]);   // fallback
-        setPlugins([]);
+        const [deviceResult, pluginResult, userResult] =
+          await Promise.allSettled([
+            api.get("/frames"),
+            api.get("/plugin/me"),
+            api.get("/auth/user/me"),
+          ]);
+
+        if (!mounted) {
+          return;
+        }
+
+        // DEVICES
+        if (deviceResult.status === "fulfilled") {
+          const deviceData = extractArray<Device>(
+            deviceResult.value,
+            "frames"
+          );
+
+          const updatedDevices = deviceData.map((device) => ({
+            ...device,
+            status: isDeviceOnline(device.updatedAt)
+              ? ("online" as const)
+              : ("offline" as const),
+          }));
+
+          setDevices(updatedDevices);
+        } else {
+          console.error(
+            "Failed to fetch devices:",
+            deviceResult.reason
+          );
+          setDevices([]);
+        }
+
+        // PLUGINS
+        if (pluginResult.status === "fulfilled") {
+          const pluginData = extractArray<Plugin>(
+            pluginResult.value,
+            "plugins"
+          );
+
+          setPlugins(pluginData);
+        } else {
+          console.error(
+            "Failed to fetch plugins:",
+            pluginResult.reason
+          );
+          setPlugins([]);
+        }
+
+        // USER
+        if (userResult.status === "fulfilled") {
+          const responseData = userResult.value.data;
+
+          const userData =
+            responseData?.userDetail ?? responseData?.data?.userDetail ?? responseData?.data ?? responseData;
+
+          setUser({
+            name: userData?.name ?? "",
+          });
+        } else {
+          console.error(
+            "Failed to fetch user:",
+            userResult.reason
+          );
+          setUser({ name: "" });
+        }
+      } catch (error) {
+        console.error("Dashboard API error:", error);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    };
+    }
 
     fetchAll();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
-  const online = devices.filter((d) => isOnline(d.sleepConfig?.updatedAt));
-  const offline = devices.filter((d) => !isOnline(d.sleepConfig?.updatedAt));
+
+  /* ================= DEVICE STATUS ================= */
+
+  const onlineDevices = devices.filter(
+    (device) => device.status === "online"
+  );
+
+  const offlineDevices = devices.filter(
+    (device) => device.status === "offline"
+  );
 
   /* ================= LOADING ================= */
 
   if (loading) {
     return (
-      <View className="flex-1 bg-white dark:bg-black justify-center items-center">
-        <ActivityIndicator color="#fff" />
-      </View>
+      <AppLayout>
+        <View className="flex-1 items-center justify-center bg-white dark:bg-[#1a1a1a]">
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+            Loading dashboard...
+          </Text>
+        </View>
+      </AppLayout>
     );
   }
 
@@ -121,175 +245,280 @@ export default function DashboardScreen() {
 
   return (
     <AppLayout>
-      <ScrollView className="flex-1 bg-white dark:bg-[#1a1a1a] px-4 pt-6">
-
+      <ScrollView
+        className="flex-1 bg-white px-4 pt-6 dark:bg-[#1a1a1a]"
+        showsVerticalScrollIndicator={false}
+      >
         {/* HEADER */}
-        <Text className="text-black dark:text-white text-lg font-semibold">
-           {getGreeting()}, {user.name || "User"}
+
+        <Text className="text-lg font-semibold text-black dark:text-white">
+          {getGreeting()}, {user.name || "User"}
         </Text>
-        <Text className="text-gray-800 dark:text-gray-400 text-sm mb-5">
+
+        <Text className="mb-5 text-sm text-gray-600 dark:text-gray-400">
           Here's an overview of your LIVETAG system
         </Text>
 
-        {/* ================= STATS ================= */}
+        {/* ================= STAT CARDS ================= */}
 
-        <View className="space-y-4">
+        <View className="gap-3">
+          {/* TOTAL DEVICES */}
 
-          {/* Total */}
-          <View className="bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-4 flex-row justify-between items-center">
+          <View className="flex-row items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-[#1a1a1a]">
             <View>
-              <Text className="text-gray-800 dark:text-gray-400 text-sm">
+              <Text className="text-sm text-gray-600 dark:text-gray-400">
                 Total Devices
               </Text>
-              <Text className="text-gray-800 dark:text-gray-400 text-2xl font-semibold">
+
+              <Text className="text-2xl font-semibold text-gray-900 dark:text-white">
                 {devices.length}
               </Text>
             </View>
-            <Monitor color="#9CA3AF" size={iconSize} />
+
+            <Monitor size={iconSize} color="#9CA3AF" />
           </View>
 
-          {/* Online */}
-          <View className="bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-4 flex-row justify-between items-center mt-2">
+          {/* ONLINE DEVICES */}
+
+          <View className="flex-row items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-[#1a1a1a]">
             <View>
-              <Text className="text-gray-900 dark:text-white text-sm">
+              <Text className="text-sm text-gray-600 dark:text-gray-400">
                 Online Devices
               </Text>
-              <Text className="text-gray-900 dark:text-white text-2xl font-semibold">
-                {online.length}
+
+              <Text className="text-2xl font-semibold text-gray-900 dark:text-white">
+                {onlineDevices.length}
               </Text>
             </View>
-            <Wifi color="#9CA3AF" size={iconSize} />
+
+            <Wifi size={iconSize} color="#9CA3AF" />
           </View>
 
-          {/* Offline */}
-          <View className="bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-4 flex-row justify-between items-center mt-2">
+          {/* OFFLINE DEVICES */}
+
+          <View className="flex-row items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-[#1a1a1a]">
             <View>
-              <Text className="text-gray-900 dark:text-white text-sm">
+              <Text className="text-sm text-gray-600 dark:text-gray-400">
                 Offline Devices
               </Text>
-              <Text className="text-gray-900 dark:text-white text-2xl font-semibold">
-                {offline.length}
+
+              <Text className="text-2xl font-semibold text-gray-900 dark:text-white">
+                {offlineDevices.length}
               </Text>
             </View>
-            <WifiOff color="#9CA3AF" size={18} />
+
+            <WifiOff size={iconSize} color="#9CA3AF" />
           </View>
 
-          {/* System */}
-          <View className="bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-4 flex-row justify-between items-center mt-2">
+          {/* SYSTEM STATUS */}
+
+          <View className="flex-row items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-[#1a1a1a]">
             <View>
-              <Text className="text-gray-900 dark:text-white text-sm">
+              <Text className="text-sm text-gray-600 dark:text-gray-400">
                 System Status
               </Text>
-              <Text className="text-gray-800 dark:text-gray-400 text-2xl font-semibold">
+
+              <Text className="text-2xl font-semibold text-gray-900 dark:text-white">
                 Active
               </Text>
             </View>
-            <Activity color="#9CA3AF" size={18} />
+
+            <Activity size={iconSize} color="#9CA3AF" />
           </View>
         </View>
 
         {/* ================= DEVICE STATUS ================= */}
 
-        <View className="bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-gray-700 rounded-xl p-4 mt-5">
-
-          <View className="flex-row justify-between mb-3">
-            <Text className="text-gray-900 dark:text-white text-base font-medium">
+        <View className="mt-5 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-[#1a1a1a]">
+          <View className="mb-4 flex-row items-center justify-between">
+            <Text className="text-base font-medium text-gray-900 dark:text-white">
               Device Status
             </Text>
-            <Text className="text-blue-400 text-sm">
-              View all
-            </Text>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Frame")}
+              activeOpacity={0.7}
+            >
+              <Text className="text-sm text-blue-500">
+                View all
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          {/* ONLINE */}
-          {online.length > 0 && (
-            <>
-              <Text className="text-gray-900 dark:text-white text-sm mb-2">
-                Online
+          {/* EMPTY DEVICES */}
+
+          {devices.length === 0 ? (
+            <View className="items-center py-6">
+              <Monitor
+                size={40}
+                color="#9CA3AF"
+              />
+
+              <Text className="mt-3 text-center text-sm text-gray-500 dark:text-gray-400">
+                No devices registered yet
               </Text>
 
-              {online.map((d) => (
-                <View
-                  key={d.id}
-                  className="bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-gray-700 rounded px-3 py-3 mb-2 flex-row justify-between items-center"
-                >
-                  <View className="flex-row items-center gap-2">
-                    <View className="w-2 h-2 bg-green-500 rounded-full" />
-                    <View>
-                      <Text className="text-gray-900 dark:text-white text-sm">
-                        {d.name}
-                      </Text>
-                      <Text className="text-gray-900 dark:text-white text-xs">
-                        Last seen: {timeAgo(d.sleepConfig?.updatedAt)}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View className="bg-green-900 px-3 py-1 rounded">
-                    <Text className="text-green-400 text-xs">
-                      ● Online
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </>
-          )}
-
-          {/* OFFLINE */}
-          {offline.length > 0 && (
+              <TouchableOpacity
+                onPress={() => navigation.navigate("Frame")}
+                className="mt-3"
+                activeOpacity={0.7}
+              >
+                <Text className="text-sm text-blue-500">
+                  Add your first device
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
             <>
-              <Text className="text-gray-900 dark:text-white text-sm mt-3 mb-2">
-                Offline
-              </Text>
+              {/* ONLINE LIST */}
 
-              {offline.map((d) => (
-                <View
-                  key={d.id}
-                  className="bg-white dark:bg-[#1a1a1a] rounded px-3 py-3 mb-2 flex-row justify-between items-center"
-                >
-                  <Text className="text-gray-900 dark:text-white text-sm">
-                    {d.name}
+              {onlineDevices.length > 0 && (
+                <View className="mb-3">
+                  <Text className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                    Online
                   </Text>
 
-                  <View className="bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded">
-                    <Text className="text-black dark:text-white text-xs">
-                      Offline
-                    </Text>
-                  </View>
+                  {onlineDevices.map((device) => (
+                    <TouchableOpacity
+                      key={device.id}
+                      onPress={() => navigation.navigate("Frame")}
+                      activeOpacity={0.7}
+                      className="mb-2 flex-row items-center justify-between rounded-lg bg-gray-100 px-3 py-3 dark:bg-[#252525]"
+                    >
+                      <View className="mr-2 flex-1 flex-row items-center gap-3">
+                        <View className="h-2 w-2 rounded-full bg-green-500" />
+
+                        <View className="flex-1">
+                          <Text
+                            numberOfLines={1}
+                            className="text-sm text-gray-900 dark:text-white"
+                          >
+                            {device.name}
+                          </Text>
+
+                          <Text className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Last seen: {timeAgo(device.updatedAt)}
+                          </Text>
+
+                          {!!device.friendlyId && (
+                            <Text className="mt-1 text-xs text-gray-500">
+                              {device.friendlyId}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+
+                      <View className="rounded-md bg-green-100 px-2 py-1 dark:bg-green-900">
+                        <Text className="text-xs text-green-700 dark:text-green-300">
+                          Online
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
                 </View>
-              ))}
+              )}
+
+              {/* OFFLINE LIST */}
+
+              {offlineDevices.length > 0 && (
+                <View>
+                  <Text className="mb-2 mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    Offline
+                  </Text>
+
+                  {offlineDevices.slice(0, 5).map((device) => (
+                    <TouchableOpacity
+                      key={device.id}
+                      onPress={() => navigation.navigate("Frame")}
+                      activeOpacity={0.7}
+                      className="mb-2 flex-row items-center justify-between rounded-lg bg-gray-100 px-3 py-3 dark:bg-[#252525]"
+                    >
+                      <View className="mr-2 flex-1 flex-row items-center gap-3">
+                        <View className="h-2 w-2 rounded-full bg-gray-400" />
+
+                        <View className="flex-1">
+                          <Text
+                            numberOfLines={1}
+                            className="text-sm text-gray-900 dark:text-white"
+                          >
+                            {device.name}
+                          </Text>
+
+                          {!!device.friendlyId && (
+                            <Text className="mt-1 text-xs text-gray-500">
+                              {device.friendlyId}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+
+                      <View className="rounded-md bg-gray-200 px-2 py-1 dark:bg-gray-700">
+                        <Text className="text-xs text-gray-700 dark:text-gray-200">
+                          Offline
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+
+                  {offlineDevices.length > 5 && (
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate("Frame")}
+                      activeOpacity={0.7}
+                    >
+                      <Text className="mt-2 text-center text-sm text-blue-500">
+                        +{offlineDevices.length - 5} more devices
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
             </>
           )}
         </View>
 
-        {/* ================= PLUGINS ================= */}
+        {/* ================= MY APPS ================= */}
 
-        <View className="bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-gray-700 rounded-xl p-4 mt-5 mb-10">
-          <Text className="text-gray-900 dark:text-white text-base font-medium mb-3">
+        <View className="mb-8 mt-5 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-[#1a1a1a]">
+          <Text className="mb-4 text-base font-medium text-gray-900 dark:text-white">
             My Apps
           </Text>
 
           {plugins.length === 0 ? (
-            <Text className="text-gray-900 dark:text-white text-sm">
-              No apps installed.
-            </Text>
+            <View className="py-3">
+              <Text className="text-sm text-gray-500 dark:text-gray-400">
+                No apps installed.
+              </Text>
+            </View>
           ) : (
-            plugins.map((p) => (
-              <View
-                key={p.pluginId}
-                className="bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-gray-700 px-3 py-3 rounded mb-2 flex-row justify-between"
+            plugins.map((plugin) => (
+              <TouchableOpacity
+                key={plugin.pluginId}
+                onPress={() =>
+                  navigation.navigate("Apps")
+                }
+                activeOpacity={0.7}
+                className="mb-2 flex-row items-center justify-between rounded-lg bg-gray-100 px-3 py-3 dark:bg-[#252525]"
               >
-                <Text className="text-gray-900 dark:text-white text-sm">
-                  {p.pluginName}
+                <Text
+                  numberOfLines={1}
+                  className="mr-3 flex-1 text-sm text-gray-900 dark:text-white"
+                >
+                  {plugin.pluginName}
                 </Text>
-                <Text className="text-gray-900 dark:text-white text-xs">
-                  {p.pluginIsEnabled ? "Enabled" : "Disabled"}
+
+                <Text
+                  className={`text-xs ${
+                    plugin.pluginIsEnabled
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                >
+                  {plugin.pluginIsEnabled ? "Enabled" : "Disabled"}
                 </Text>
-              </View>
+              </TouchableOpacity>
             ))
           )}
         </View>
-
       </ScrollView>
     </AppLayout>
   );

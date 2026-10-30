@@ -218,7 +218,7 @@ const openPlayground = async (item: PlaylistItem) => {
   }
 
   return (
-    <AppLayout navigation={navigation}>
+    <AppLayout>
       <View className="flex-1 bg-white dark:bg-[#1a1a1a] p-4">
 
         {/* HEADER */}

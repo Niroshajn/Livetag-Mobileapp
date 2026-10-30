@@ -649,7 +649,7 @@ export default function FramesScreen({
 
   if (loading && frames.length === 0) {
     return (
-      <AppLayout navigation={navigation}>
+      <AppLayout >
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator
             size="large"
@@ -665,7 +665,7 @@ export default function FramesScreen({
   }
 
   return (
-    <AppLayout navigation={navigation}>
+    <AppLayout>
       {/* HEADER */}
       <View className="px-4 pt-4 pb-3">
         <View className="flex-row items-center justify-between">

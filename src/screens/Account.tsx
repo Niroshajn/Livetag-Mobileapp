@@ -1,183 +1,445 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  View, 
+  View,
   TouchableOpacity,
   Image,
   ScrollView,
-  TextInput,
   Modal,
   Alert,
   Dimensions,
+  TextInput,
+  ActivityIndicator,
 } from "react-native";
+import { launchImageLibrary } from "react-native-image-picker";
 import Text from "../components/AppText";
 import {
   User,
   Mail,
-  Shield,
-  Bell,
-  Palette,
   ChevronRight,
   Camera,
   Key,
-  Smartphone,
-  Globe,
   Moon,
   Sun,
   Check,
+  Pencil,
+  X,
+  Trash2,
 } from "lucide-react-native";
+
 import api from "../lib/api";
-import EditProfileModal from "../modal/EditProfileModal";
 import PasswordModal from "../modal/PasswordModal";
 import AppLayout from "./Layout";
 import { useTheme } from "../context/ThemeContext";
 import { useColorScheme } from "nativewind";
 
-type ProfileData = {
+type UserData = {
   name: string;
-  profilePic?: string | null;
+  email: string;
+  profilePic: string;
+  createdAt: string;
 };
 
 export default function AccountScreen() {
   const { theme, toggleTheme } = useTheme();
   const { colorScheme } = useColorScheme();
-  const [user, setUser] = useState({
+
+  const [user, setUser] = useState<UserData>({
     name: "",
-    email: "", profilePic: "",
+    email: "",
+    profilePic: "",
     createdAt: "",
   });
-    const { width } = Dimensions.get("window");
-    const iconSize = width * 0.05;
 
-  const [editModal, setEditModal] = useState(false);
+  const [nameModal, setNameModal] = useState(false);
+  const [imageModal, setImageModal] = useState(false);
   const [passwordModal, setPasswordModal] = useState(false);
-  const [name, setName] = useState(user.name);
+
+  const [editedName, setEditedName] = useState("");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const [savingName, setSavingName] = useState(false);
+  const [savingImage, setSavingImage] = useState(false);
+
+  const iconSize = Math.max(
+    18,
+    Math.min(Dimensions.get("window").width * 0.05, 24)
+  );
+
+  const iconColor = colorScheme === "dark" ? "#FFFFFF" : "#111827";
+
+  const fetchUser = useCallback(async () => {
+    try {
+      const res = await api.get("/auth/user/me");
+      const data = res.data?.userDetail ?? res.data?.user ?? res.data;
+
+      setUser({
+        name: data?.name ?? "",
+        email: data?.email ?? "",
+        profilePic: data?.profilePic ?? "",
+        createdAt: data?.createdAt ?? "",
+      });
+    } catch (error) {
+      console.log("User fetch error:", error);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get("/auth/user/me");
-
-        const userData = res.data?.userDetail ?? res.data;
-
-        setUser({
-          name: userData.name,
-          email: userData.email,
-          profilePic: userData.profilePic || "",
-          createdAt: userData.createdAt,
-        });
-
-      } catch (err) {
-        console.log("User fetch error:", err);
-      }
-    };
-
     fetchUser();
-  }, []);
+  }, [fetchUser]);
+
+  // NAME: open a name-only editor
+  const openNameEditor = () => {
+    setEditedName(user.name);
+    setNameModal(true);
+  };
+
+  const saveName = async () => {
+    const trimmedName = editedName.trim();
+
+    if (!trimmedName) {
+      Alert.alert("Full name required", "Please enter your full name.");
+      return;
+    }
+
+    if (trimmedName === user.name) {
+      setNameModal(false);
+      return;
+    }
+
+    try {
+      setSavingName(true);
+
+      const res = await api.post("/auth/profile", {
+        name: trimmedName,
+        profilePic: user.profilePic || "",
+      });
+
+      const updated =
+        res.data?.user ?? res.data?.userDetail ?? res.data;
+
+      setUser((previous) => ({
+        ...previous,
+        name: updated?.name ?? trimmedName,
+        email: updated?.email ?? previous.email,
+        profilePic:
+          updated?.profilePic !== undefined
+            ? updated.profilePic ?? ""
+            : previous.profilePic,
+      }));
+
+      setNameModal(false);
+      Alert.alert("Success", "Your name has been updated.");
+    } catch (error: any) {
+      console.log("Name update error:", error);
+      Alert.alert(
+        "Update failed",
+        error?.response?.data?.message ??
+          "Unable to update your name. Please try again."
+      );
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  // IMAGE: choose an image without opening the name editor
+  const chooseImage = async () => {
+    try {
+      const result = await launchImageLibrary({
+        mediaType: "photo",
+        selectionLimit: 1,
+      });
+
+      if (result.didCancel) return;
+
+      if (result.errorCode) {
+        Alert.alert(
+          "Image selection failed",
+          result.errorMessage ?? "Please try again."
+        );
+        return;
+      }
+
+      const uri = result.assets?.[0]?.uri;
+
+      if (uri) {
+        setSelectedImage(uri);
+      }
+    } catch (error) {
+      console.log("Image picker error:", error);
+      Alert.alert("Error", "Unable to open the image library.");
+    }
+  };
+
+  // Save selected image using the existing profile endpoint
+  const saveImage = async () => {
+    if (!selectedImage) {
+      Alert.alert("Select an image", "Please choose an image first.");
+      return;
+    }
+
+    try {
+      setSavingImage(true);
+
+      // This assumes the API accepts the provided URI.
+      // If the backend requires a file upload, upload the image first
+      // and send the returned image URL here instead.
+      const res = await api.post("/auth/profile", {
+        name: user.name,
+        profilePic: selectedImage,
+      });
+
+      const updated =
+        res.data?.user ?? res.data?.userDetail ?? res.data;
+
+      const savedImage = updated?.profilePic ?? selectedImage;
+
+      setUser((previous) => ({
+        ...previous,
+        name: updated?.name ?? previous.name,
+        email: updated?.email ?? previous.email,
+        profilePic: savedImage,
+      }));
+
+      setSelectedImage(null);
+      setImageModal(false);
+      Alert.alert("Success", "Your profile image has been updated.");
+    } catch (error: any) {
+      console.log("Image update error:", error);
+      Alert.alert(
+        "Update failed",
+        error?.response?.data?.message ??
+          "Unable to update the image. Your server may require an image upload first."
+      );
+    } finally {
+      setSavingImage(false);
+    }
+  };
+
+  // Delete the profile image
+  const deleteImage = () => {
+    Alert.alert(
+      "Delete profile image",
+      "Are you sure you want to remove your profile image?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setSavingImage(true);
+
+              const res = await api.post("/auth/profile", {
+                name: user.name,
+                profilePic: "",
+              });
+
+              const updated =
+                res.data?.user ?? res.data?.userDetail ?? res.data;
+
+              setUser((previous) => ({
+                ...previous,
+                name: updated?.name ?? previous.name,
+                email: updated?.email ?? previous.email,
+                profilePic:
+                  updated?.profilePic !== undefined
+                    ? updated.profilePic ?? ""
+                    : "",
+              }));
+
+              setSelectedImage(null);
+              setImageModal(false);
+              Alert.alert("Success", "Your profile image has been removed.");
+            } catch (error: any) {
+              console.log("Delete image error:", error);
+              Alert.alert(
+                "Delete failed",
+                error?.response?.data?.message ??
+                  "Unable to delete your profile image."
+              );
+            } finally {
+              setSavingImage(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Change password
+  const handleSavePassword = async (
+    currentPassword: string,
+    newPassword: string
+  ) => {
+    if (!currentPassword || !newPassword) {
+      Alert.alert("Missing fields", "Please fill in all password fields.");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      Alert.alert(
+        "Invalid password",
+        "Your new password must contain at least 8 characters."
+      );
+      return;
+    }
+
+    try {
+      await api.post("/auth/change-password", {
+        oldPassword: currentPassword,
+        newPassword,
+      });
+
+      setPasswordModal(false);
+      Alert.alert("Success", "Your password has been changed.");
+    } catch (error: any) {
+      Alert.alert(
+        "Password change failed",
+        error?.response?.data?.message ??
+          "Unable to change your password. Please try again."
+      );
+    }
+  };
+
   return (
     <AppLayout>
-      <ScrollView className="flex-1 bg-white dark:bg-[#1a1a1a] px-4 pt-6">
+      <ScrollView
+        className="flex-1 bg-white px-4 pt-6 dark:bg-black"
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* PAGE HEADER */}
         <View className="mb-6">
           <Text className="text-2xl font-bold text-gray-900 dark:text-white">
             Account
           </Text>
-          <Text className="text-gray-500 dark:text-gray-400 mt-1">
+          <Text className="mt-1 text-gray-500 dark:text-gray-400">
             Manage your profile, security, and preferences
           </Text>
         </View>
 
         {/* PROFILE CARD */}
-        <View className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl p-5 mb-5">
-          <View className="items-center">
-
-            {/* Avatar */}
+        <View className="mb-5 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-[#1a1a1a]">
+          <View className="flex-row items-center gap-4">
+            {/* PROFILE IMAGE */}
             <View className="relative">
-              <View className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-[2px]">
-                <View className="w-full h-full rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center overflow-hidden">
-                  {user.profilePic ? (
-                    <Image
-                      source={{ uri: user.profilePic }}
-                      className="w-full h-full"
-                    />
-                  ) : (
-                    <User size={iconSize} color={colorScheme === "dark" ? "white" : "black"} />
-                  )}
-                </View>
+              <View className="h-20 w-20 overflow-hidden rounded-full border-2 border-blue-500 bg-gray-100 dark:bg-gray-800">
+                {user.profilePic ? (
+                  <Image
+                    key={user.profilePic}
+                    source={{ uri: user.profilePic }}
+                    className="h-full w-full"
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View className="flex-1 items-center justify-center">
+                    <User size={32} color={iconColor} />
+                  </View>
+                )}
               </View>
 
+              {/* CAMERA: IMAGE ONLY */}
               <TouchableOpacity
-                onPress={() => setEditModal(true)}
-                className="absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full"
+                onPress={() => {
+                  setSelectedImage(null);
+                  setImageModal(true);
+                }}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Edit profile image"
+                className="absolute bottom-0 right-0 rounded-full bg-blue-600 p-2"
               >
-                <Camera size={iconSize} color="white" />
+                <Camera size={15} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
 
-            {/* Info */}
-            <Text className="text-xl font-bold text-gray-900 dark:text-white mt-3">
-              {user.name}
-            </Text>
+            {/* NAME AND EMAIL */}
+            <View className="flex-1">
+              <View className="flex-row items-center gap-2">
+                <Text className="text-lg font-bold text-gray-900 dark:text-white">
+                  {user.name || "Your Name"}
+                </Text>
 
-            <View className="flex-row items-center mt-1">
-              <Mail size={iconSize} color="gray" />
-              <Text className="ml-2 text-gray-500 dark:text-gray-400">
-                {user.email}
-              </Text>
+                {/* PENCIL: NAME ONLY */}
+                <TouchableOpacity
+                  onPress={openNameEditor}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit full name"
+                  className="rounded-md border border-gray-300 p-1.5 dark:border-gray-700"
+                >
+                  <Pencil size={15} color={iconColor} />
+                </TouchableOpacity>
+              </View>
+
+              <View className="mt-1 flex-row items-center">
+                <Mail size={14} color="#6B7280" />
+                <Text className="ml-2 flex-1 text-sm text-gray-500 dark:text-gray-400">
+                  {user.email}
+                </Text>
+              </View>
+
+              {!!user.createdAt && (
+                <Text className="mt-1 text-xs text-gray-400">
+                  Member since {new Date(user.createdAt).toDateString()}
+                </Text>
+              )}
             </View>
-
-            <Text className="text-gray-400 text-sm mt-2">
-              Member since {new Date(user.createdAt).toDateString()}
-            </Text>
-
-            <TouchableOpacity
-              onPress={() => setEditModal(true)}
-              className="mt-4 border border-gray-300 dark:border-gray-700 px-4 py-2 rounded-lg"
-            >
-              <Text className="text-gray-900 dark:text-white">
-                Edit Profile
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
 
-        {/* PERSONAL INFO */}
-        <View className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl mb-5">
-          <View className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-            <Text className="font-semibold text-gray-900 dark:text-white flex-row">
+        {/* PERSONAL INFORMATION */}
+        <View className="mb-5 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-[#1a1a1a]">
+          <View className="border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+            <Text className="font-semibold text-gray-900 dark:text-white">
               Personal Information
             </Text>
           </View>
 
-          <View>
-            <View className="px-5 py-4 flex-row justify-between items-center">
-              <View>
-                <Text className="text-gray-500 text-sm">Full Name</Text>
-                <Text className="text-gray-900 dark:text-white font-medium">
-                  {user.name}
-                </Text>
-              </View>
-              <ChevronRight color={colorScheme === "dark" ? "white" : "black"} />
+          {/* FULL NAME: NAME ONLY */}
+          <TouchableOpacity
+            onPress={openNameEditor}
+            activeOpacity={0.7}
+            className="flex-row items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800"
+          >
+            <View className="flex-1">
+              <Text className="text-sm text-gray-500 dark:text-gray-400">
+                Full Name
+              </Text>
+              <Text className="mt-1 font-medium text-gray-900 dark:text-white">
+                {user.name || "Not provided"}
+              </Text>
             </View>
-            <View className="px-5 py-4 flex-row justify-between items-center">
-              <View>
-                <Text className="text-gray-500 text-sm">Email</Text>
-                <Text className="text-gray-900 dark:text-white font-medium">
-                  {user.email}
-                </Text>
-              </View>
-              <View className="bg-green-100 px-2 py-1 rounded-full flex-row items-center">
-                <Check size={iconSize} color="green" />
-                <Text className="text-green-700 text-xs ml-1">
-                  Verified
-                </Text>
-              </View>
+            <ChevronRight size={20} color={iconColor} />
+          </TouchableOpacity>
+
+          {/* EMAIL */}
+          <View className="flex-row items-center justify-between px-5 py-4">
+            <View className="flex-1">
+              <Text className="text-sm text-gray-500 dark:text-gray-400">
+                Email Address
+              </Text>
+              <Text className="mt-1 font-medium text-gray-900 dark:text-white">
+                {user.email}
+              </Text>
+            </View>
+
+            <View className="flex-row items-center rounded-full bg-green-100 px-2 py-1 dark:bg-green-900/30">
+              <Check size={13} color="#16A34A" />
+              <Text className="ml-1 text-xs text-green-700 dark:text-green-400">
+                Verified
+              </Text>
             </View>
           </View>
         </View>
 
         {/* SECURITY */}
-        <View className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl mb-5">
-
-          <View className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+        <View className="mb-5 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-[#1a1a1a]">
+          <View className="border-b border-gray-100 px-5 py-4 dark:border-gray-800">
             <Text className="font-semibold text-gray-900 dark:text-white">
               Security
             </Text>
@@ -185,133 +447,272 @@ export default function AccountScreen() {
 
           <TouchableOpacity
             onPress={() => setPasswordModal(true)}
-            className="px-5 py-4 flex-row justify-between items-center"
+            activeOpacity={0.7}
+            className="flex-row items-center justify-between px-5 py-4"
           >
             <View className="flex-row items-center gap-3">
-              <Key size={iconSize} color="gray" />
-              <Text className="text-gray-900 dark:text-white">
-                Password
-              </Text>
-            </View>
-            <ChevronRight color={colorScheme === "dark" ? "white" : "black"} />
-          </TouchableOpacity>
+              <View className="rounded-lg bg-gray-100 p-2 dark:bg-gray-800">
+                <Key size={19} color="#6B7280" />
+              </View>
 
-          <View className="px-5 py-4 flex-row justify-between items-center">
-            <Text className="text-gray-500">Two-Factor Auth</Text>
-            <Text className="text-xs bg-gray-200 px-2 py-1 rounded">
-              Coming Soon
-            </Text>
-          </View>
+              <View>
+                <Text className="font-medium text-gray-900 dark:text-white">
+                  Password
+                </Text>
+                <Text className="text-sm text-gray-500 dark:text-gray-400">
+                  Change your password
+                </Text>
+              </View>
+            </View>
+
+            <ChevronRight size={20} color={iconColor} />
+          </TouchableOpacity>
         </View>
 
         {/* PREFERENCES */}
-        <View className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl mb-10">
-
-          <View className="px-5 py-3 border-b border-gray-100 dark:border-gray-800">
+        <View className="mb-10 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-[#1a1a1a]">
+          <View className="border-b border-gray-100 px-5 py-4 dark:border-gray-800">
             <Text className="font-semibold text-gray-900 dark:text-white">
               Preferences
             </Text>
           </View>
 
-          {/* THEME */}
-          <View className="px-5 py-3 flex-row justify-between items-center">
+          {/* APPEARANCE */}
+          <View className="flex-row items-center justify-between px-5 py-4">
             <View className="flex-row items-center gap-3">
               {theme === "dark" ? (
-                <Sun size={iconSize} color="white" />
+                <Sun size={20} color="#FFFFFF" />
               ) : (
-                <Moon size={iconSize} color="gray" />
+                <Moon size={20} color="#6B7280" />
               )}
-              <Text className="text-gray-900 dark:text-white">
-                Appearance
-              </Text>
+
+              <View>
+                <Text className="font-medium text-gray-900 dark:text-white">
+                  Appearance
+                </Text>
+                <Text className="text-sm text-gray-500 dark:text-gray-400">
+                  {theme === "dark" ? "Dark mode" : "Light mode"}
+                </Text>
+              </View>
             </View>
 
             <TouchableOpacity
               onPress={toggleTheme}
-              className={`w-12 h-6 rounded-full ${theme === "dark" ? "bg-blue-600" : "bg-gray-300"
-                }`}
+              activeOpacity={0.8}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: theme === "dark" }}
+              accessibilityLabel="Toggle appearance"
+              className={`h-6 w-12 justify-center rounded-full ${
+                theme === "dark" ? "bg-blue-600" : "bg-gray-300"
+              }`}
             >
               <View
-                className={`w-5 h-5 bg-white rounded-full mt-[2px] ${theme === "dark" ? "ml-6" : "ml-1"
-                  }`}
+                className={`h-5 w-5 rounded-full bg-white ${
+                  theme === "dark" ? "ml-6" : "ml-0.5"
+                }`}
               />
             </TouchableOpacity>
           </View>
 
-          {/* NOTIFICATION */}
-          <View className="px-5 py-3 flex-row justify-between">
-            <Text className="text-gray-900 dark:text-white">
-              Notifications
-            </Text>
-            <Text className="text-xs bg-gray-200 px-2 py-1 rounded">
-              Coming Soon
-            </Text>
-          </View>
-
           {/* LANGUAGE */}
-          <View className="px-5 py-3 flex-row justify-between">
-            <Text className="text-gray-900 dark:text-white">
-              Language
+          <View className="flex-row justify-between px-5 py-4">
+            <Text className="text-gray-900 dark:text-white">Language</Text>
+            <Text className="text-gray-500 dark:text-gray-400">
+              English
             </Text>
-            <Text className="text-gray-500">English</Text>
           </View>
         </View>
 
-        {/* EDIT MODAL */}
-        <Modal visible={editModal} transparent animationType="fade">
-          <View className="flex-1 justify-center bg-black/50 p-4">
-            <EditProfileModal
-              user={user}
-              onCancel={() => setEditModal(false)}
-              onSave={async (data: ProfileData) => {
-                try {
-                  const res = await api.post("/auth/profile", {
-                    name: data.name,
-                    profilePic: data.profilePic,
-                  });
-                  const updatedUser = res.data?.user;
-                  setUser((prev) => ({
-                    ...prev,
-                    name: updatedUser.name,
-                    email: updatedUser.email,
-                    profilePic: updatedUser.profilePic
-                      ? `${updatedUser.profilePic}?t=${Date.now()}`
-                      : "",
-                  }));
-                  setEditModal(false); // close modal after save
-                } catch (err) {
-                  console.log("Update error:", err);
-                }
-              }}
-            />
+        {/* EDIT NAME MODAL */}
+        <Modal
+          visible={nameModal}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          onRequestClose={() => setNameModal(false)}
+        >
+          <View className="flex-1 justify-center bg-black/60 px-5">
+            <View className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-[#1a1a1a]">
+              <View className="mb-5 flex-row items-center justify-between">
+                <Text className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Edit Full Name
+                </Text>
+
+                <TouchableOpacity
+                  onPress={() => setNameModal(false)}
+                  disabled={savingName}
+                  hitSlop={10}
+                >
+                  <X size={21} color={iconColor} />
+                </TouchableOpacity>
+              </View>
+
+              <Text className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Full Name
+              </Text>
+
+              <TextInput
+                value={editedName}
+                onChangeText={setEditedName}
+                placeholder="Enter your full name"
+                placeholderTextColor="#9CA3AF"
+                autoCapitalize="words"
+                autoCorrect={false}
+                editable={!savingName}
+                returnKeyType="done"
+                onSubmitEditing={saveName}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-3 text-base text-gray-900 dark:border-gray-700 dark:bg-[#252525] dark:text-white"
+              />
+
+              <View className="mt-6 flex-row justify-end gap-3">
+                <TouchableOpacity
+                  onPress={() => setNameModal(false)}
+                  disabled={savingName}
+                  className="items-center justify-center rounded-lg px-4 py-3"
+                >
+                  <Text className="text-gray-700 dark:text-gray-300">
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={saveName}
+                  disabled={savingName}
+                  className="min-w-28 items-center justify-center rounded-lg bg-blue-600 px-5 py-3"
+                >
+                  {savingName ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text className="font-semibold text-white">
+                      Save Changes
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </Modal>
 
-        {/* PASSWORD MODAL */}
-        <Modal visible={passwordModal} transparent animationType="fade">
+        {/* EDIT IMAGE MODAL */}
+        <Modal
+          visible={imageModal}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          onRequestClose={() => {
+            setImageModal(false);
+            setSelectedImage(null);
+          }}
+        >
+          <View className="flex-1 justify-center bg-black/60 px-5">
+            <View className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-[#1a1a1a]">
+              <View className="mb-5 flex-row items-center justify-between">
+                <Text className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Edit Profile Image
+                </Text>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    setImageModal(false);
+                    setSelectedImage(null);
+                  }}
+                  disabled={savingImage}
+                  hitSlop={10}
+                >
+                  <X size={21} color={iconColor} />
+                </TouchableOpacity>
+              </View>
+
+              {/* IMAGE PREVIEW */}
+              <View className="mb-5 items-center">
+                <View className="h-28 w-28 overflow-hidden rounded-full border-2 border-blue-500 bg-gray-100 dark:bg-gray-800">
+                  {(selectedImage || user.profilePic) ? (
+                    <Image
+                      source={{
+                        uri: selectedImage || user.profilePic,
+                      }}
+                      className="h-full w-full"
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View className="flex-1 items-center justify-center">
+                      <User size={42} color={iconColor} />
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {/* CHOOSE IMAGE */}
+              <TouchableOpacity
+                onPress={chooseImage}
+                disabled={savingImage}
+                activeOpacity={0.7}
+                className="mb-3 flex-row items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-3 dark:border-gray-700"
+              >
+                <Camera size={18} color={iconColor} />
+                <Text className="font-medium text-gray-900 dark:text-white">
+                  {selectedImage ? "Choose Another Image" : "Change Image"}
+                </Text>
+              </TouchableOpacity>
+
+              {/* DELETE IMAGE */}
+             <TouchableOpacity
+  onPress={deleteImage}
+  disabled={savingImage || !user.profilePic}
+  activeOpacity={0.7}
+  className="flex-row items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-3 dark:border-gray-700"
+>
+  <Trash2 size={17} color="#6B7280" />
+  <Text className="font-medium text-gray-700 dark:text-gray-300">
+    Delete Profile Image
+  </Text>
+</TouchableOpacity>
+
+              {/* ACTIONS */}
+              <View className="mt-5 flex-row justify-end gap-3">
+                <TouchableOpacity
+                  onPress={() => {
+                    setImageModal(false);
+                    setSelectedImage(null);
+                  }}
+                  disabled={savingImage}
+                  className="items-center justify-center rounded-lg px-4 py-3"
+                >
+                  <Text className="text-gray-700 dark:text-gray-300">
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={saveImage}
+                  disabled={savingImage || !selectedImage}
+                  className={`min-w-24 items-center justify-center rounded-lg px-5 py-3 ${
+                    selectedImage ? "bg-blue-600" : "bg-gray-400"
+                  }`}
+                >
+                  {savingImage ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text className="font-semibold text-white">Save</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* CHANGE PASSWORD MODAL */}
+        <Modal
+          visible={passwordModal}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          onRequestClose={() => setPasswordModal(false)}
+        >
           <View className="flex-1 justify-center bg-black/50 p-4">
             <PasswordModal
               onCancel={() => setPasswordModal(false)}
-              onSave={async (currentPassword, newPassword) => {
-                if (!currentPassword || !newPassword) {
-                  Alert.alert("Fill all fields");
-                  return;
-                }
-                if (newPassword.length < 8) {
-                  Alert.alert("Min 8 characters");
-                  return;
-                }
-                try {
-                  await api.post("/auth/change-password", {
-                    oldPassword: currentPassword,
-                    newPassword,
-                  });
-                  Alert.alert("Password changed");
-                  setPasswordModal(false);
-                } catch (err: any) {
-                  Alert.alert(err?.response?.data?.message || "Error");
-                }
-              }}
+              onSave={handleSavePassword}
             />
           </View>
         </Modal>
