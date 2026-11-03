@@ -2,10 +2,17 @@
 // import AsyncStorage from "@react-native-async-storage/async-storage";
 // import { API_URL } from "@env";
 
-// console.log("ENV API_URL:", API_URL);
+// console.log("========== ENV CHECK ==========");
+// console.log("API_URL:", JSON.stringify(API_URL));
+// console.log("================================");
+
+// if (!API_URL) {
+//   throw new Error("API_URL is missing. Check your .env configuration.");
+// }
+
 // const api = axios.create({
-//   baseURL: API_URL,
-//   timeout: 10000,
+//   baseURL: API_URL.trim(),
+//   timeout: 15000,
 //   headers: {
 //     "Content-Type": "application/json",
 //   },
@@ -23,52 +30,30 @@
 //     console.log("METHOD:", config.method?.toUpperCase());
 //     console.log("BASE URL:", config.baseURL);
 //     console.log("URL:", config.url);
-//     console.log(
-//       "FULL URL:",
-//       `${config.baseURL}${config.url}`
-//     );
-//     console.log("PARAMS:", config.params);
-//     console.log("BODY:", config.data);
+//     console.log("FULL URL:", `${config.baseURL}${config.url}`);
 //     console.log("TOKEN:", token ? "Present" : "Missing");
-//     console.log("HEADERS:", config.headers);
 //     console.log("=================================\n");
 
 //     return config;
 //   },
-//   (error) => {
-//     console.log("REQUEST ERROR:", error);
-//     return Promise.reject(error);
-//   }
+//   (error) => Promise.reject(error)
 // );
 
 // api.interceptors.response.use(
 //   (response) => {
-//     console.log("\n========== API RESPONSE ==========");
-//     console.log("STATUS:", response.status);
-//     console.log("URL:", response.config.url);
-//     console.log("METHOD:", response.config.method?.toUpperCase());
-//     console.log("RESPONSE:", response.data);
-//     console.log("==================================\n");
-
+//     console.log("API RESPONSE:", response.status, response.config.url);
 //     return response;
 //   },
 //   (error) => {
-//     console.log("\n========== API ERROR ==========");
+//     console.log("API ERROR:", error.message);
 
 //     if (error.response) {
 //       console.log("STATUS:", error.response.status);
-//       console.log("URL:", error.config?.url);
-//       console.log("METHOD:", error.config?.method?.toUpperCase());
 //       console.log("ERROR RESPONSE:", error.response.data);
-//       console.log("ERROR HEADERS:", error.response.headers);
 //     } else if (error.request) {
 //       console.log("REQUEST SENT BUT NO RESPONSE");
 //       console.log("URL:", error.config?.url);
-//     } else {
-//       console.log("ERROR:", error.message);
 //     }
-
-//     console.log("================================\n");
 
 //     return Promise.reject(error);
 //   }
@@ -77,62 +62,221 @@
 // export default api;
 
 
-import axios from "axios";
+import axios, {
+  AxiosHeaders,
+} from "axios";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { API_URL } from "@env";
+
+// --------------------------------------------------
+// ENV CONFIGURATION
+// --------------------------------------------------
 
 console.log("========== ENV CHECK ==========");
 console.log("API_URL:", JSON.stringify(API_URL));
 console.log("================================");
 
 if (!API_URL) {
-  throw new Error("API_URL is missing. Check your .env configuration.");
+  throw new Error(
+    "API_URL is missing. Check your .env configuration."
+  );
 }
+
+// --------------------------------------------------
+// CREATE AXIOS INSTANCE
+// --------------------------------------------------
 
 const api = axios.create({
   baseURL: API_URL.trim(),
+
   timeout: 15000,
+
   headers: {
     "Content-Type": "application/json",
   },
 });
 
+// --------------------------------------------------
+// REQUEST INTERCEPTOR
+// --------------------------------------------------
+
 api.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem("token");
+    try {
+      // 1. Get active tenant
+      const tenantData =
+        await AsyncStorage.getItem("activeTenant");
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      // 2. Get authentication token
+      const token =
+        await AsyncStorage.getItem("token");
+
+      // 3. Prepare request headers
+      const headers = AxiosHeaders.from(
+        config.headers
+      );
+
+      // 4. Attach tenant information
+      if (tenantData) {
+        const tenant = JSON.parse(tenantData);
+
+        if (tenant?.id && tenant?.domain) {
+          headers.set(
+            "X-Tenant-ID",
+            tenant.id
+          );
+
+          headers.set(
+            "X-Tenant-Domain",
+            tenant.domain
+          );
+        }
+      } else {
+        // Prevent stale tenant information
+        headers.delete("X-Tenant-ID");
+        headers.delete("X-Tenant-Domain");
+      }
+
+      // 5. Attach authentication token
+      if (token) {
+        headers.set(
+          "Authorization",
+          `Bearer ${token}`
+        );
+      } else {
+        headers.delete("Authorization");
+      }
+
+      config.headers = headers;
+
+      // --------------------------------------------------
+      // DEBUG LOGS
+      // --------------------------------------------------
+
+      console.log("\n========== API REQUEST ==========");
+
+      console.log(
+        "METHOD:",
+        config.method?.toUpperCase()
+      );
+
+      console.log(
+        "BASE URL:",
+        config.baseURL
+      );
+
+      console.log(
+        "URL:",
+        config.url
+      );
+
+      console.log(
+        "FULL URL:",
+        `${config.baseURL}${config.url}`
+      );
+
+      console.log(
+        "TENANT:",
+        tenantData
+          ? JSON.parse(tenantData).domain
+          : "No active tenant"
+      );
+
+      console.log(
+        "TOKEN:",
+        token ? "Present" : "Missing"
+      );
+
+      console.log("=================================\n");
+
+      return config;
+
+    } catch (error) {
+      console.log(
+        "API REQUEST INTERCEPTOR ERROR:",
+        error
+      );
+
+      return Promise.reject(error);
     }
-
-    console.log("\n========== API REQUEST ==========");
-    console.log("METHOD:", config.method?.toUpperCase());
-    console.log("BASE URL:", config.baseURL);
-    console.log("URL:", config.url);
-    console.log("FULL URL:", `${config.baseURL}${config.url}`);
-    console.log("TOKEN:", token ? "Present" : "Missing");
-    console.log("=================================\n");
-
-    return config;
   },
-  (error) => Promise.reject(error)
+
+  (error) => {
+    console.log("REQUEST ERROR:", error);
+
+    return Promise.reject(error);
+  }
 );
+
+// --------------------------------------------------
+// RESPONSE INTERCEPTOR
+// --------------------------------------------------
 
 api.interceptors.response.use(
   (response) => {
-    console.log("API RESPONSE:", response.status, response.config.url);
+    console.log("\n========== API RESPONSE ==========");
+
+    console.log(
+      "STATUS:",
+      response.status
+    );
+
+    console.log(
+      "URL:",
+      response.config.url
+    );
+
+    console.log(
+      "METHOD:",
+      response.config.method?.toUpperCase()
+    );
+
+    console.log("RESPONSE:", response.data);
+
+    console.log("==================================\n");
+
     return response;
   },
+
   (error) => {
-    console.log("API ERROR:", error.message);
+    console.log("\n========== API ERROR ==========");
 
     if (error.response) {
-      console.log("STATUS:", error.response.status);
-      console.log("ERROR RESPONSE:", error.response.data);
+      console.log(
+        "STATUS:",
+        error.response.status
+      );
+
+      console.log(
+        "URL:",
+        error.config?.url
+      );
+
+      console.log(
+        "ERROR RESPONSE:",
+        error.response.data
+      );
+
     } else if (error.request) {
-      console.log("REQUEST SENT BUT NO RESPONSE");
-      console.log("URL:", error.config?.url);
+      console.log(
+        "REQUEST SENT BUT NO RESPONSE"
+      );
+
+      console.log(
+        "URL:",
+        error.config?.url
+      );
+
+    } else {
+      console.log(
+        "ERROR:",
+        error.message
+      );
     }
+
+    console.log("================================\n");
 
     return Promise.reject(error);
   }

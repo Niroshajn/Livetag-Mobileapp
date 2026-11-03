@@ -1602,28 +1602,29 @@ return (
         />
 
         {/* ================= PLAYLIST ITEM MODAL ================= */}
-        {selectedFrame && plugin && (
-          <PlaylistItemModal
-            open={showPlaylistItem}
-            onClose={() => {
-              setShowPlaylistItem(false);
-            }}
-            pluginName={plugin.pluginName}
-            plugin={plugin}
-            selectedItem={null}
-            frameId={selectedFrame.frameId}
-            onSaved={() => {
-              const frameId = selectedFrame.frameId;
+       {selectedFrame && plugin && (
+  <PlaylistItemModal
+    open={showPlaylistItem}
+    onClose={() => {
+      setShowPlaylistItem(false);
+    }}
+    pluginId={plugin.pluginId}
+    pluginName={plugin.pluginName}
+    selectedItem={null}
+    frameId={selectedFrame.frameId}
+    onSaved={() => {
+      const frameId = selectedFrame.frameId;
 
-              setShowPlaylistItem(false);
-              setShowFrameSelect(false);
-              setSelectedFrame(null);
-              navigation.navigate("PlayList", {
-                id: String(frameId),
-              });
-            }}
-          />
-        )}
+      setShowPlaylistItem(false);
+      setShowFrameSelect(false);
+      setSelectedFrame(null);
+
+      navigation.navigate("PlayList", {
+        id: String(frameId),
+      });
+    }}
+  />
+)}
       </View>
     </KeyboardAvoidingView>
   </SafeAreaView>

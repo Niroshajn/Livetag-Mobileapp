@@ -2329,5 +2329,4 @@ return (
     </KeyboardAvoidingView>
   </SafeAreaView>
 );
-
 }

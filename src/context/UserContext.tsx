@@ -7,6 +7,8 @@ interface User {
   name?: string;
   email?: string;
   profilePic?: string;
+  roles?: any[];
+  permissions?: string[];
 }
 
 interface UserContextType {
