@@ -165,15 +165,14 @@ export default function PlaylistScreen() {
           : [];
 
         // Convert API refreshSeconds to number.
-        const normalizedItems: PlaylistItem[] = list.map(
-          (item) => ({
-            ...item,
-            refreshSeconds:
-              Number(item.refreshSeconds) || 0,
-          })
-        );
+     const normalizedItems: PlaylistItem[] = list.map(
+  (item) => ({
+    ...item,
+    refreshSeconds: item.refreshSeconds,
+  })
+);
 
-        setItems(normalizedItems);
+setItems(normalizedItems);
 
         setMeta(res.data?.meta ?? null);
       } catch (error: any) {
@@ -462,15 +461,14 @@ export default function PlaylistScreen() {
             )}
 
             <View className="flex-1">
-              <Text
-                bold
-                numberOfLines={1}
-                className="text-gray-900 dark:text-white"
-              >
-                {pluginName}
-              </Text>
-
-              <Text className="text-gray-400 text-xs mt-1">
+      <Text
+  bold
+  numberOfLines={1}
+  className="text-gray-900 dark:text-white text-xl"
+>
+  {pluginName}
+</Text>
+              <Text className="text-gray-400 text-md mt-1">
                 {item.startTime} - {item.endTime}
               </Text>
             </View>
@@ -536,9 +534,9 @@ export default function PlaylistScreen() {
               color="#9CA3AF"
             />
 
-            <Text className="text-gray-400 text-xs ml-1">
-              Refresh: {Number(item.refreshSeconds) || 0}s
-            </Text>
+           <Text className="text-gray-400 text-xs ml-1">
+  Refresh: {item.refreshSeconds}
+</Text>
           </View>
 
           <Text
@@ -588,16 +586,16 @@ export default function PlaylistScreen() {
         {/* HEADER */}
 
         <View className="mb-4">
-          <Text
+          <Text bold
             className="
               text-gray-900 dark:text-white
-              text-xl font-bold mt-5
+              text-2xl mt-5
             "
           >
             {deviceName || "Playlist"}
           </Text>
 
-          <Text className="text-gray-500 text-xs">
+          <Text className="text-gray-500 text-md">
             Devices / {deviceName || "Playlist"}
           </Text>
 
@@ -764,21 +762,19 @@ export default function PlaylistScreen() {
         {/* ADD / EDIT PLAYLIST MODAL */}
 
         {selectedPlugin?.pluginId && id && (
-          <PlaylistItemModal
-            key={selectedItem?.id || "new"}
-            open={openPlaylistModal}
-            onClose={closePlaylistModal}
-            pluginId={String(selectedPlugin.pluginId)}
-            pluginName={selectedPlugin.pluginName}
-            selectedItem={selectedItem}
-            frameId={String(id)}
-            onSaved={async () => {
-              closePlaylistModal();
-              await fetchPlaylistItems(page);
-            }}
-            width={displayWidth}
-            height={displayHeight}
-          />
+         <PlaylistItemModal
+  key={selectedItem?.id || "new"}
+  open={openPlaylistModal}
+  onClose={closePlaylistModal}
+  pluginId={String(selectedPlugin.pluginId)}
+  pluginName={selectedPlugin.pluginName}
+  selectedItem={selectedItem}
+  frameId={String(id)}
+  onSaved={async () => {
+    closePlaylistModal();
+    await fetchPlaylistItems(page);
+  }}
+/>
         )}
 
         {/* DELETE MODAL */}

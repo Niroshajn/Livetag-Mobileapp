@@ -28,6 +28,28 @@ type Timezone = {
     value: string;
     label: string;
 };
+const timeToDate = (time?: string): Date => {
+    const date = new Date();
+
+    if (time) {
+        const [hours, minutes] = time.split(":").map(Number);
+
+        if (
+            Number.isInteger(hours) &&
+            Number.isInteger(minutes) &&
+            hours >= 0 &&
+            hours <= 23 &&
+            minutes >= 0 &&
+            minutes <= 59
+        ) {
+            date.setHours(hours, minutes, 0, 0);
+            return date;
+        }
+    }
+
+    date.setHours(0, 0, 0, 0);
+    return date;
+};
 
 export default function DeviceSettingsModal({
     visible,
@@ -289,24 +311,52 @@ export default function DeviceSettingsModal({
                 </View>
             </View>
             {showSleepStartPicker && (
-                <DateTimePicker
-                    value={new Date()}
-                    mode="time"
-                    is24Hour={true}
-                    display="spinner"
-                    onChange={onSleepStartChange}
-                />
-            )}
+    <DateTimePicker
+        value={timeToDate(sleepStart)}
+        mode="time"
+        display="spinner"
+        is24Hour={false}
+        onChange={(event, selectedDate) => {
+            setShowSleepStartPicker(false);
 
-            {showSleepEndPicker && (
-                <DateTimePicker
-                    value={new Date()}
-                    mode="time"
-                    is24Hour={true}
-                    display="spinner"
-                    onChange={onSleepEndChange}
-                />
-            )}
+            if (event.type === "set" && selectedDate) {
+                const hours = String(
+                    selectedDate.getHours()
+                ).padStart(2, "0");
+
+                const minutes = String(
+                    selectedDate.getMinutes()
+                ).padStart(2, "0");
+
+                setSleepStart(`${hours}:${minutes}`);
+            }
+        }}
+    />
+)}
+
+          {showSleepEndPicker && (
+    <DateTimePicker
+        value={timeToDate(sleepEnd)}
+        mode="time"
+        display="spinner"
+        is24Hour={false}
+        onChange={(event, selectedDate) => {
+            setShowSleepEndPicker(false);
+
+            if (event.type === "set" && selectedDate) {
+                const hours = String(
+                    selectedDate.getHours()
+                ).padStart(2, "0");
+
+                const minutes = String(
+                    selectedDate.getMinutes()
+                ).padStart(2, "0");
+
+                setSleepEnd(`${hours}:${minutes}`);
+            }
+        }}
+    />
+)}
         </Modal>
     );
 }

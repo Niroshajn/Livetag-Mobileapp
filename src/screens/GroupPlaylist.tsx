@@ -60,23 +60,54 @@ interface PluginListResponse {
   data: Plugin[];
 }
 
+/* ================= REFRESH DISPLAY HELPER ================= */
+
+function formatRefreshInterval(value: string | number | undefined): string {
+  if (value === undefined || value === null || value === "") {
+    return "Not set";
+  }
+
+  const stringValue = String(value).trim();
+
+  // Already in the format returned by tenant-config.
+  if (/^\d+\s*(min|hr|d)$/i.test(stringValue)) {
+    return stringValue;
+  }
+
+  // Handle numeric seconds returned by some API responses.
+  const seconds = Number(stringValue);
+
+  if (!Number.isNaN(seconds)) {
+    const knownIntervals: Record<number, string> = {
+      300: "5min",
+      600: "10min",
+      3600: "1hr",
+      14400: "4hr",
+      86400: "1d",
+    };
+
+    return knownIntervals[seconds] || `${seconds}s`;
+  }
+
+  return stringValue;
+}
+
 /* ================= SCREEN ================= */
 
 export default function GroupPlaylistScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
 
-  // Web uses the URL param "targetId".
-  // Accept targetId, groupId or id so any navigate() call works.
   const targetId: string | undefined =
-    route.params?.targetId || route.params?.groupId || route.params?.id;
+    route.params?.targetId ||
+    route.params?.groupId ||
+    route.params?.id;
 
   const groupName: string = route.params?.groupName || "Group";
 
   /* ================= STATES ================= */
 
   const [items, setItems] = useState<PlaylistItem[]>([]);
-
   const [pluginsMap, setPluginsMap] = useState<Record<string, Plugin>>({});
 
   const [meta, setMeta] = useState<PlaylistMeta | null>(null);
@@ -114,7 +145,11 @@ export default function GroupPlaylistScreen() {
         const formattedItems: PlaylistItem[] = (res.data.data ?? []).map(
           (item) => ({
             ...item,
-            refreshSeconds: Number(item.refreshSeconds) || 0,
+
+            // IMPORTANT:
+            // Do not convert this to Number().
+            // The API can return values such as "1hr", "10min", or 3600.
+            refreshSeconds: item.refreshSeconds ?? "",
           })
         );
 
@@ -152,14 +187,12 @@ export default function GroupPlaylistScreen() {
       setPluginsMap(map);
     } catch (error: any) {
       console.log("PLUGIN FETCH ERROR:", error?.response?.data || error);
-
       Alert.alert("Error", "Failed to load plugins");
     }
   }, []);
 
   /* ================= EFFECTS ================= */
 
-  // Go back to page 1 when the group changes
   useEffect(() => {
     setPage(1);
   }, [targetId]);
@@ -186,7 +219,9 @@ export default function GroupPlaylistScreen() {
     const plugin = pluginsMap[item.pluginId];
 
     const pluginName =
-      item.data?.name || plugin?.pluginName || `App #${item.pluginId}`;
+      item.data?.name ||
+      plugin?.pluginName ||
+      `App #${item.pluginId}`;
 
     setSelectedItem(item);
 
@@ -216,7 +251,9 @@ export default function GroupPlaylistScreen() {
           playlistItemId: item.id,
 
           pluginName:
-            plugin?.pluginName || item.data?.name || `App #${item.pluginId}`,
+            plugin?.pluginName ||
+            item.data?.name ||
+            `App #${item.pluginId}`,
 
           pluginDescription: plugin?.pluginDescription,
 
@@ -229,7 +266,6 @@ export default function GroupPlaylistScreen() {
       });
     } catch (error: any) {
       console.log("OPEN PLAYGROUND ERROR:", error?.response?.data || error);
-
       Alert.alert("Error", "Failed to open playground");
     }
   };
@@ -244,14 +280,14 @@ export default function GroupPlaylistScreen() {
         `/playlist/item/${deleteItemId}/frame-or-group/${targetId}`
       );
 
-      const remainingItems = items.filter((item) => item.id !== deleteItemId);
+      const remainingItems = items.filter(
+        (item) => item.id !== deleteItemId
+      );
 
       setItems(remainingItems);
-
       setOpenDeleteModal(false);
       setDeleteItemId(null);
 
-      // If the last item on this page was deleted, go back one page.
       if (remainingItems.length === 0 && page > 1) {
         setPage((prev) => prev - 1);
       } else {
@@ -259,7 +295,6 @@ export default function GroupPlaylistScreen() {
       }
     } catch (error: any) {
       console.log("DELETE PLAYLIST ERROR:", error?.response?.data || error);
-
       Alert.alert("Error", "Failed to delete playlist item");
     }
   };
@@ -289,8 +324,6 @@ export default function GroupPlaylistScreen() {
         onPress={() => openPlayground(item)}
         className="mb-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-[#1a1a1a]"
       >
-        {/* TOP: LOGO + NAME + ACTIONS */}
-
         <View className="flex-row items-center justify-between">
           <View className="mr-3 flex-1 flex-row items-center">
             {plugin?.pluginLogoUrl ? (
@@ -341,11 +374,7 @@ export default function GroupPlaylistScreen() {
           </View>
         </View>
 
-        {/* DIVIDER */}
-
         <View className="my-4 h-px bg-gray-100 dark:bg-gray-800" />
-
-        {/* BOTTOM: PRIORITY + REFRESH + STATUS */}
 
         <View className="flex-row flex-wrap items-center justify-between gap-y-3">
           <View className="flex-row items-center">
@@ -360,7 +389,7 @@ export default function GroupPlaylistScreen() {
             <Zap size={15} color="#9CA3AF" />
 
             <Text className="ml-1.5 text-xs text-gray-500">
-              Refresh: {item.refreshSeconds}
+              Refresh: {formatRefreshInterval(item.refreshSeconds)}
             </Text>
           </View>
 
@@ -386,7 +415,7 @@ export default function GroupPlaylistScreen() {
     );
   };
 
-  /* ================= PAGINATION (same rule as web) ================= */
+  /* ================= PAGINATION ================= */
 
   const renderPagination = () => {
     if (!meta || items.length === 0) return null;
@@ -446,14 +475,13 @@ export default function GroupPlaylistScreen() {
     );
   };
 
-  /* ================= LOADING (first load) ================= */
+  /* ================= LOADING ================= */
 
   if (loading && items.length === 0) {
     return (
       <AppLayout>
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#3B82F6" />
-
           <Text className="mt-3 text-gray-500">Loading playlist...</Text>
         </View>
       </AppLayout>
@@ -465,8 +493,6 @@ export default function GroupPlaylistScreen() {
   return (
     <AppLayout>
       <View className="flex-1 px-4 pt-4">
-        {/* HEADER */}
-
         <View className="mb-5">
           <Text className="text-2xl font-bold text-gray-900 dark:text-white">
             {groupName} Playlist
@@ -475,10 +501,6 @@ export default function GroupPlaylistScreen() {
           <Text className="mt-1 text-sm text-gray-500">
             Group playlist items
           </Text>
-
-          {/* ADD ITEM
-              (On web this lives in the Frames header as "Add Playlist".
-              Kept here because the mobile Frames screen has no such button.) */}
 
           <TouchableOpacity
             activeOpacity={0.8}
@@ -493,13 +515,13 @@ export default function GroupPlaylistScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* LIST / EMPTY STATE */}
-
         {items.length === 0 ? (
           <View className="flex-1 items-center justify-center pb-20">
             <Monitor size={40} color="#9CA3AF" />
 
-            <Text className="mt-3 text-gray-500">No playlist items found</Text>
+            <Text className="mt-3 text-gray-500">
+              No playlist items found
+            </Text>
           </View>
         ) : (
           <FlatList
@@ -513,16 +535,12 @@ export default function GroupPlaylistScreen() {
           />
         )}
 
-        {/* LOADING INDICATOR (page change) */}
-
         {loading && items.length > 0 && (
           <View className="absolute bottom-5 self-center">
             <ActivityIndicator size="small" color="#3B82F6" />
           </View>
         )}
       </View>
-
-      {/* SELECT PLUGIN MODAL */}
 
       <SelectPluginModal
         open={openSelectModal}
@@ -537,8 +555,6 @@ export default function GroupPlaylistScreen() {
         }}
       />
 
-      {/* ADD / EDIT PLAYLIST MODAL */}
-
       {selectedPlugin && targetId && (
         <PlaylistItemModal
           key={selectedItem?.id || "new"}
@@ -550,13 +566,10 @@ export default function GroupPlaylistScreen() {
           frameId={targetId}
           isGroup={true}
           onSaved={async () => {
-            closePlaylistModal();
             await fetchPlaylist(page);
           }}
         />
       )}
-
-      {/* DELETE MODAL */}
 
       <DeleteModal
         visible={openDeleteModal}

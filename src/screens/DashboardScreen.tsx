@@ -67,18 +67,19 @@ export default function DashboardScreen() {
   const [pluginsLoading, setPluginsLoading] = useState(true);
 
   // Check device online status
-  const isDeviceOnline = (updatedAt?: string) => {
-    if (!updatedAt) return false;
+// Check device online status (same logic as WEB)
+const isDeviceOnline = (updatedAt?: string) => {
+  if (!updatedAt) return false;
 
-    const lastUpdate = new Date(updatedAt).getTime();
+  const now = new Date();
+  const lastUpdate = new Date(updatedAt);
 
-    if (Number.isNaN(lastUpdate)) return false;
+  const diffMs = now.getTime() - lastUpdate.getTime();
 
-    const diffHours =
-      (Date.now() - lastUpdate) / (1000 * 60 * 60);
+  const diffHours = diffMs / (1000 * 60 * 60);
 
-    return diffHours >= 0 && diffHours < 24;
-  };
+  return diffHours < 24;
+};
 
   // Calculate time since last update
   const timeAgo = (date?: string) => {
@@ -211,7 +212,7 @@ export default function DashboardScreen() {
   }) => (
     <View className="w-[48%] bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl p-4 mb-3">
       <View className="flex-row items-center justify-between">
-        <Text className="text-xs text-gray-500 dark:text-gray-400">
+        <Text className="text-md text-gray-500 dark:text-gray-400">
           {title}
         </Text>
 
@@ -244,7 +245,7 @@ export default function DashboardScreen() {
           onPress={onPress}
           className="flex-row items-center"
         >
-          <Text className="text-sm text-blue-600 dark:text-blue-400">
+          <Text className="text-md text-blue-600 dark:text-blue-400">
             {actionText}
           </Text>
           <ChevronRight size={16} color="#3b82f6" />
@@ -264,7 +265,7 @@ export default function DashboardScreen() {
     <TouchableOpacity
       onPress={() => navigation.navigate("Frame")}
       activeOpacity={0.8}
-      className="flex-row items-center justify-between bg-gray-100 dark:bg-[#252525] rounded-lg p-3 mb-2"
+      className="flex-row items-center justify-between bg-white dark:bg-[#252525] rounded-lg p-3 mb-2"
     >
       <View className="flex-row items-center flex-1 mr-2">
         <View
@@ -275,18 +276,18 @@ export default function DashboardScreen() {
 
         <View className="flex-1">
           <Text
-            className="text-sm font-medium text-gray-900 dark:text-white"
+            className="text-md font-medium text-gray-900 dark:text-white"
             numberOfLines={1}
           >
             {device.name}
           </Text>
 
-          <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <Text className="text-md text-gray-500 dark:text-gray-400 mt-1">
             Last seen: {timeAgo(device.updatedAt)}
           </Text>
 
           {device.friendlyId && (
-            <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <Text className="text-md text-gray-500 dark:text-gray-400 mt-1">
               {device.friendlyId}
             </Text>
           )}
@@ -301,7 +302,7 @@ export default function DashboardScreen() {
         }`}
       >
         <Text
-          className={`text-xs font-medium ${
+          className={`text-md font-medium ${
             online
               ? "text-green-700 dark:text-green-400"
               : "text-gray-600 dark:text-gray-300"
@@ -348,15 +349,15 @@ export default function DashboardScreen() {
 
           <View className="flex-row items-start justify-between mb-6">
             <View className="flex-1 pr-2">
-              <Text className="text-lg font-bold text-gray-900 dark:text-white">
+              <Text className="text-xl font-bold text-gray-900 dark:text-white">
                 {getGreeting()},
               </Text>
 
-              <Text className="text-lg font-bold text-gray-900 dark:text-white">
+              <Text className="text-xl font-bold text-gray-900 dark:text-white">
                 {user?.name || "User"}
               </Text>
 
-              <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <Text className="text-md text-gray-500 dark:text-gray-400 mt-1">
                 Here's an overview of your LIVETAG system
               </Text>
             </View>
@@ -370,7 +371,7 @@ export default function DashboardScreen() {
                   activeOpacity={0.7}
                   className="border border-blue-500 rounded-lg px-2 py-2"
                 >
-                  <Text className="text-[10px] font-semibold text-blue-600 dark:text-blue-400">
+                  <Text className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                     Add User
                   </Text>
                 </TouchableOpacity>
@@ -380,7 +381,7 @@ export default function DashboardScreen() {
                   activeOpacity={0.7}
                   className="border border-blue-500 rounded-lg px-2 py-2"
                 >
-                  <Text className="text-[10px] font-semibold text-blue-600 dark:text-blue-400">
+                  <Text className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                     Users
                   </Text>
                 </TouchableOpacity>
@@ -395,7 +396,7 @@ export default function DashboardScreen() {
 
             <View className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl p-3">
               <View className="flex-row justify-between items-center">
-                <Text className="text-xs text-gray-500 dark:text-gray-400">
+                <Text className="text-md text-gray-500 dark:text-gray-400">
                   Total Devices
                 </Text>
                 <Monitor size={17} color="#6b7280" />
@@ -410,7 +411,7 @@ export default function DashboardScreen() {
 
             <View className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl p-3">
               <View className="flex-row justify-between items-center">
-                <Text className="text-xs text-gray-500 dark:text-gray-400">
+                <Text className="text-md text-gray-500 dark:text-gray-400">
                   Online Devices
                 </Text>
                 <Wifi size={17} color="#6b7280" />
@@ -425,7 +426,7 @@ export default function DashboardScreen() {
 
             <View className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl p-3">
               <View className="flex-row justify-between items-center">
-                <Text className="text-xs text-gray-500 dark:text-gray-400">
+                <Text className="text-md text-gray-500 dark:text-gray-400">
                   Offline Devices
                 </Text>
                 <WifiOff size={17} color="#6b7280" />
@@ -440,7 +441,7 @@ export default function DashboardScreen() {
 
             <View className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl p-3">
               <View className="flex-row justify-between items-center">
-                <Text className="text-xs text-gray-500 dark:text-gray-400">
+                <Text className="text-md text-gray-500 dark:text-gray-400">
                   System Status
                 </Text>
                 <Activity size={17} color="#6b7280" />
@@ -464,7 +465,7 @@ export default function DashboardScreen() {
               <View className="items-center py-6">
                 <Monitor size={38} color="#9ca3af" />
 
-                <Text className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+                <Text className="text-md text-gray-500 dark:text-gray-400 mt-3">
                   No devices registered yet
                 </Text>
 
@@ -472,7 +473,7 @@ export default function DashboardScreen() {
                   onPress={() => navigation.navigate("Frame")}
                   className="mt-3"
                 >
-                  <Text className="text-sm text-blue-600 dark:text-blue-400">
+                  <Text className="text-md text-blue-600 dark:text-blue-400">
                     Add your first device
                   </Text>
                 </TouchableOpacity>
@@ -483,7 +484,7 @@ export default function DashboardScreen() {
 
                 {onlineDevices.length > 0 && (
                   <View className="mb-3">
-                    <Text className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    <Text className="text-md text-gray-500 dark:text-gray-400 mb-2">
                       Online
                     </Text>
 
@@ -501,7 +502,7 @@ export default function DashboardScreen() {
 
                 {offlineDevices.length > 0 && (
                   <View>
-                    <Text className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    <Text className="text-md text-gray-500 dark:text-gray-400 mb-2">
                       Offline
                     </Text>
 
@@ -518,7 +519,7 @@ export default function DashboardScreen() {
                         onPress={() => navigation.navigate("Frame")}
                         className="py-3"
                       >
-                        <Text className="text-center text-sm text-blue-600 dark:text-blue-400">
+                        <Text className="text-center text-md text-blue-600 dark:text-blue-400">
                           +{offlineDevices.length - 5} more devices
                         </Text>
                       </TouchableOpacity>
@@ -541,7 +542,7 @@ export default function DashboardScreen() {
             </View>
 
             <View className="mb-4">
-              <Text className="text-xs text-gray-500 dark:text-gray-400">
+              <Text className="text-md text-gray-500 dark:text-gray-400">
                 Host URL
               </Text>
 
@@ -552,7 +553,7 @@ export default function DashboardScreen() {
 
             <View className="flex-row justify-between">
               <View className="flex-1">
-                <Text className="text-xs text-gray-500 dark:text-gray-400">
+                <Text className="text-md text-gray-500 dark:text-gray-400">
                   Total Devices
                 </Text>
 
@@ -562,7 +563,7 @@ export default function DashboardScreen() {
               </View>
 
               <View className="flex-1">
-                <Text className="text-xs text-gray-500 dark:text-gray-400">
+                <Text className="text-md text-gray-500 dark:text-gray-400">
                   Online
                 </Text>
 
@@ -572,7 +573,7 @@ export default function DashboardScreen() {
               </View>
 
               <View className="flex-1">
-                <Text className="text-xs text-gray-500 dark:text-gray-400">
+                <Text className="text-md text-gray-500 dark:text-gray-400">
                   Offline
                 </Text>
 
@@ -594,7 +595,7 @@ export default function DashboardScreen() {
             {pluginsLoading ? (
               <ActivityIndicator color="#6366f1" />
             ) : plugins.length === 0 ? (
-              <Text className="text-sm text-gray-500 dark:text-gray-400 py-3">
+              <Text className="text-md text-gray-500 dark:text-gray-400 py-3">
                 No apps installed.
               </Text>
             ) : (
@@ -612,7 +613,7 @@ export default function DashboardScreen() {
                 >
                   <View className="flex-1 mr-3">
                     <Text
-                      className="text-sm font-medium text-gray-900 dark:text-white"
+                      className="text-md font-medium text-gray-900 dark:text-white"
                       numberOfLines={1}
                     >
                       {plugin.pluginName}
@@ -620,7 +621,7 @@ export default function DashboardScreen() {
                   </View>
 
                   <Text
-                    className={`text-xs ${
+                    className={`text-md ${
                       plugin.pluginIsEnabled
                         ? "text-green-600 dark:text-green-400"
                         : "text-gray-500 dark:text-gray-400"

@@ -1,9 +1,16 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import type { ReactNode } from "react";
+
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+} from "react";
+
+import type { ReactNode, Dispatch, SetStateAction } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-interface User {
-  id?: number;
+export interface User {
+  id?: string | number;
   name?: string;
   email?: string;
   profilePic?: string;
@@ -14,93 +21,139 @@ interface User {
 interface UserContextType {
   user: User | null;
   token: string | null;
+  loading: boolean;
   login: (userData: User, token: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
+  setUser: Dispatch<SetStateAction<User | null>>;
 }
 
-const UserContext = createContext<UserContextType | undefined>(undefined);
+const UserContext = createContext<UserContextType | undefined>(
+  undefined
+);
 
 export const UserProvider = ({
   children,
   setIsLoggedIn,
 }: {
   children: ReactNode;
-  setIsLoggedIn: (value: boolean) => void;
+  setIsLoggedIn?: (value: boolean) => void;
 }) => {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // ================= LOAD FROM STORAGE =================
+  // LOAD SAVED SESSION
   useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const [savedToken, savedUser] =
+          await AsyncStorage.multiGet(["token", "user"]);
+
+        const tokenValue = savedToken[1];
+        const userValue = savedUser[1];
+
+        if (tokenValue && userValue) {
+          const parsedUser = JSON.parse(userValue);
+
+          setToken(tokenValue);
+          setUser(parsedUser);
+        } else {
+          setToken(null);
+          setUser(null);
+        }
+      } catch (error) {
+        console.log("User loading error:", error);
+        setToken(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadUser();
   }, []);
 
-  const loadUser = async () => {
+  // LOGIN
+  const login = async (
+    userData: User,
+    newToken: string
+  ) => {
     try {
-      const savedToken = await AsyncStorage.getItem("token");
-      const savedUser = await AsyncStorage.getItem("user");
-
-      if (savedToken) setToken(savedToken);
-      if (savedUser) setUser(JSON.parse(savedUser));
-    } catch (err) {
-      console.log("Error loading user:", err);
-    }
-  };
-
-  // ================= LOGIN =================
-  const login = async (userData: User, token: string) => {
-    try {
-      await AsyncStorage.setItem("token", token);
-      await AsyncStorage.setItem("user", JSON.stringify(userData));
+      await AsyncStorage.multiSet([
+        ["token", newToken],
+        ["user", JSON.stringify(userData)],
+      ]);
 
       setUser(userData);
-      setToken(token);
-    } catch (err) {
-      console.log("Login error:", err);
+      setToken(newToken);
+      setIsLoggedIn?.(true);
+    } catch (error) {
+      console.log("Login storage error:", error);
+      throw error;
     }
   };
 
-  // ================= LOGOUT =================
+  // LOGOUT
   const logout = async () => {
-  try {
-    await AsyncStorage.removeItem("token");
-    await AsyncStorage.removeItem("user");
-
-    setUser(null);
-    setToken(null);
-
-    // 🔥 THIS IS THE KEY FIX
-    setIsLoggedIn(false);
-  } catch (err) {
-    console.log("Logout error:", err);
-  }
-};
-
-  // ================= UPDATE USER =================
-  const updateUser = async (userData: Partial<User>) => {
     try {
-      const updatedUser = { ...user, ...userData } as User;
+      await AsyncStorage.multiRemove([
+        "token",
+        "user",
+        "isAdmin",
+      ]);
 
-      setUser(updatedUser);
-      await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
-    } catch (err) {
-      console.log("Update user error:", err);
+      setUser(null);
+      setToken(null);
+      setIsLoggedIn?.(false);
+    } catch (error) {
+      console.log("Logout error:", error);
+      throw error;
     }
+  };
+
+  // UPDATE USER
+  const updateUser = async (
+    userData: Partial<User>
+  ) => {
+    const updatedUser = {
+      ...user,
+      ...userData,
+    } as User;
+
+    await AsyncStorage.setItem(
+      "user",
+      JSON.stringify(updatedUser)
+    );
+
+    setUser(updatedUser);
   };
 
   return (
-    <UserContext.Provider value={{ user, token, login, logout, updateUser }}>
+    <UserContext.Provider
+      value={{
+        user,
+        token,
+        loading,
+        login,
+        logout,
+        updateUser,
+        setUser,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );
 };
 
-// ================= HOOK =================
 export const useUser = () => {
   const context = useContext(UserContext);
+
   if (!context) {
-    throw new Error("useUser must be used inside UserProvider");
+    throw new Error(
+      "useUser must be used inside UserProvider"
+    );
   }
+
   return context;
 };

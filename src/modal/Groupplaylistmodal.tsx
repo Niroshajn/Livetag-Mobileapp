@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+
+import React, { useCallback, useEffect, useState } from "react";
 
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Modal,
   Pressable,
@@ -12,15 +14,15 @@ import {
 import { Check, List, X } from "lucide-react-native";
 
 import Text from "../components/AppText";
-import api from "../lib/api";
-
-// Change this path to where your mobile PlaylistItemModal lives
+import apiClient from "../lib/api";
 import PlaylistItemModal from "./PlaylistItemModal";
+
+/* ================= TYPES ================= */
 
 interface Group {
   id: string;
   name: string;
-  isSystemDefault?: boolean;
+  isSystemDefault: boolean;
 }
 
 interface FrameGroupsResponse {
@@ -35,150 +37,204 @@ interface FrameGroupsResponse {
   };
 }
 
-interface Props {
+interface SelectGroupModalProps {
   visible: boolean;
   onClose: () => void;
   pluginId: string;
   pluginName: string;
 }
 
-export default function GroupPlaylistModal({
+/* ================= COMPONENT ================= */
+
+export default function SelectGroupModal({
   visible,
   onClose,
   pluginId,
   pluginName,
-}: Props) {
+}: SelectGroupModalProps) {
   const [groups, setGroups] = useState<Group[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(
+    null
+  );
 
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-
+  const [loading, setLoading] = useState(false);
   const [playlistOpen, setPlaylistOpen] = useState(false);
-  const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
+  const [currentGroupId, setCurrentGroupId] = useState<string | null>(
+    null
+  );
 
-  // ------------------------------------------------
-  // FETCH GROUPS (hide system default group)
-  // ------------------------------------------------
+  /* ================= FETCH GROUPS ================= */
+
+  const fetchGroups = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      console.log("========== SELECT GROUPS ==========");
+
+      // Same endpoint as the web application.
+      const response = await apiClient.get<FrameGroupsResponse>(
+        "/frame-groups"
+      );
+
+      const allGroups = response.data?.data ?? [];
+
+      console.log("ALL GROUPS:", allGroups);
+
+      // Same filtering logic as the web application.
+      // Do not display the system Default Group.
+      const availableGroups = allGroups.filter(
+        (group) => group.isSystemDefault !== true
+      );
+
+      console.log("AVAILABLE GROUPS:", availableGroups);
+
+      setGroups(availableGroups);
+    } catch (error: any) {
+      console.log(
+        "FETCH GROUPS ERROR:",
+        error?.response?.data || error
+      );
+
+      setGroups([]);
+
+      Alert.alert(
+        "Error",
+        error?.response?.data?.message || "Failed to load groups."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /* ================= OPEN MODAL ================= */
 
   useEffect(() => {
     if (!visible) return;
 
-    let cancelled = false;
-
-    const fetchGroups = async () => {
-      try {
-        setLoading(true);
-
-        const res = await api.get<FrameGroupsResponse>("/frame-groups");
-
-        const allGroups = res.data?.data ?? [];
-
-        const nonDefaultGroups = allGroups.filter(
-          (group) => group.isSystemDefault !== true
-        );
-
-        if (!cancelled) setGroups(nonDefaultGroups);
-      } catch (error: any) {
-        console.log("Group playlist groups error:", error?.response?.data || error);
-
-        if (!cancelled) setGroups([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
+    // Reset previous selection whenever the modal opens.
+    setSelectedGroupId(null);
+    setCurrentGroupId(null);
+    setPlaylistOpen(false);
 
     fetchGroups();
+  }, [visible, fetchGroups]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [visible]);
+  /* ================= SELECT GROUP ================= */
 
-  // Reset selection whenever the modal is closed
-  useEffect(() => {
-    if (!visible) {
-      setSelectedGroupId(null);
-      setPlaylistOpen(false);
-      setCurrentGroupId(null);
-    }
-  }, [visible]);
-
-  // ------------------------------------------------
-  // ACTIONS
-  // ------------------------------------------------
-
-  const toggleGroup = (group: Group) => {
-    setSelectedGroupId((previous) => (previous === group.id ? null : group.id));
+  const handleSelectGroup = (groupId: string) => {
+    setSelectedGroupId((previous) =>
+      previous === groupId ? null : groupId
+    );
   };
 
+  /* ================= CONTINUE ================= */
+
   const handleContinue = () => {
-    if (!selectedGroupId) return;
+    if (!selectedGroupId) {
+      return;
+    }
+
+    console.log("SELECTED GROUP ID:", selectedGroupId);
 
     setCurrentGroupId(selectedGroupId);
     setPlaylistOpen(true);
   };
 
-  // ------------------------------------------------
-  // GROUP CARD
-  // ------------------------------------------------
+  /* ================= CLOSE SELECT GROUP ================= */
+
+  const handleClose = () => {
+    if (loading) return;
+
+    setSelectedGroupId(null);
+    setCurrentGroupId(null);
+    setPlaylistOpen(false);
+
+    onClose();
+  };
+
+  /* ================= CLOSE PLAYLIST MODAL ================= */
+
+  const handlePlaylistClose = () => {
+    setPlaylistOpen(false);
+    setCurrentGroupId(null);
+  };
+
+  /* ================= RENDER GROUP ================= */
 
   const renderGroup = ({ item }: { item: Group }) => {
     const isSelected = selectedGroupId === item.id;
 
     return (
-      <View className="w-1/2 p-1.5">
-        <Pressable
-          onPress={() => toggleGroup(item)}
-          className={`rounded-xl border p-4 ${
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() => handleSelectGroup(item.id)}
+        className={`m-1 flex-1 rounded-xl border p-4 ${
+          isSelected
+            ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+            : "border-gray-200 bg-white dark:border-gray-700 dark:bg-[#1a1a1a]"
+        }`}
+      >
+        {/* SELECTED CHECK ICON */}
+
+        {isSelected && (
+          <View className="absolute right-2 top-2 z-10 h-6 w-6 items-center justify-center rounded-full bg-blue-500">
+            <Check size={14} color="#FFFFFF" />
+          </View>
+        )}
+
+        {/* GROUP ICON */}
+
+        <View className="mb-3 items-center">
+          <View
+            className={`h-12 w-12 items-center justify-center rounded-xl ${
+              isSelected
+                ? "bg-blue-100 dark:bg-blue-900/50"
+                : "bg-gray-100 dark:bg-gray-800"
+            }`}
+          >
+            <List
+              size={22}
+              color={isSelected ? "#3B82F6" : "#9CA3AF"}
+            />
+          </View>
+        </View>
+
+        {/* GROUP NAME */}
+
+        <Text
+          numberOfLines={2}
+          className={`text-center text-sm font-semibold ${
             isSelected
-              ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-              : "border-gray-200 bg-white dark:border-gray-700 dark:bg-[#252525]"
+              ? "text-blue-600 dark:text-blue-400"
+              : "text-gray-800 dark:text-white"
           }`}
         >
-          {isSelected && (
-            <View className="absolute right-2 top-2 h-5 w-5 items-center justify-center rounded-full bg-blue-500">
-              <Check size={12} color="#FFFFFF" />
-            </View>
-          )}
-
-          <View className="mb-3 items-center">
-            <View className="h-10 w-10 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">
-              <List size={20} color="#6B7280" />
-            </View>
-          </View>
-
-          <Text
-            numberOfLines={2}
-            className="text-center text-sm font-medium text-gray-900 dark:text-white"
-          >
-            {item.name}
-          </Text>
-        </Pressable>
-      </View>
+          {item.name}
+        </Text>
+      </TouchableOpacity>
     );
   };
 
-  // ------------------------------------------------
-  // UI
-  // ------------------------------------------------
+  /* ================= UI ================= */
 
   return (
     <>
-      {/* The select modal hides while the playlist modal is open,
-          because stacking two RN Modals is unreliable on iOS. */}
+      {/* SELECT GROUP MODAL */}
+
       <Modal
         visible={visible && !playlistOpen}
         transparent
         animationType="fade"
-        onRequestClose={onClose}
         statusBarTranslucent
+        onRequestClose={handleClose}
       >
-        <View className="flex-1 items-center justify-center bg-black/60 px-5">
-          <View className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-[#1a1a1a]">
+        <View className="flex-1 justify-center bg-black/50 px-5">
+          <View className="max-h-[80%] rounded-2xl bg-white p-5 dark:bg-[#1a1a1a]">
+
             {/* HEADER */}
 
-            <View className="mb-5 flex-row items-start justify-between">
-              <View className="mr-3 flex-1">
+            <View className="mb-5 flex-row items-center justify-between">
+              <View className="flex-1 pr-3">
                 <Text className="text-xl font-bold text-gray-900 dark:text-white">
                   Select Group
                 </Text>
@@ -188,99 +244,126 @@ export default function GroupPlaylistModal({
                 </Text>
               </View>
 
-              <TouchableOpacity onPress={onClose} hitSlop={10}>
-                <X size={22} color="#9CA3AF" />
+              <TouchableOpacity
+                onPress={handleClose}
+                disabled={loading}
+                className="h-9 w-9 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800"
+              >
+                <X size={19} color="#9CA3AF" />
               </TouchableOpacity>
             </View>
 
-            {/* GROUP GRID */}
+            {/* GROUP LIST */}
 
-            <View style={{ maxHeight: 300 }}>
-              {loading ? (
-                <View className="items-center py-10">
-                  <ActivityIndicator size="large" color="#2563EB" />
-                  <Text className="mt-3 text-gray-500 dark:text-gray-400">
-                    Loading groups...
-                  </Text>
-                </View>
-              ) : groups.length === 0 ? (
-                <View className="items-center py-8">
-                  <List size={48} color="#9CA3AF" />
-
-                  <Text className="mt-3 text-gray-500 dark:text-gray-400">
-                    No groups available
-                  </Text>
-                </View>
-              ) : (
-                <FlatList
-                  data={groups}
-                  renderItem={renderGroup}
-                  keyExtractor={(item) => String(item.id)}
-                  numColumns={2}
-                  showsVerticalScrollIndicator={false}
+            {loading ? (
+              <View className="min-h-[180px] items-center justify-center">
+                <ActivityIndicator
+                  size="large"
+                  color="#3B82F6"
                 />
-              )}
-            </View>
+
+                <Text className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                  Loading groups...
+                </Text>
+              </View>
+            ) : groups.length === 0 ? (
+              <View className="min-h-[180px] items-center justify-center">
+                <View className="mb-3 h-14 w-14 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800">
+                  <List size={28} color="#9CA3AF" />
+                </View>
+
+                <Text className="text-center text-sm text-gray-500 dark:text-gray-400">
+                  No groups available
+                </Text>
+              </View>
+            ) : (
+              <FlatList
+                data={groups}
+                keyExtractor={(item) => item.id}
+                renderItem={renderGroup}
+                numColumns={2}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{
+                  paddingVertical: 4,
+                }}
+                columnWrapperStyle={{
+                  justifyContent: "space-between",
+                }}
+                style={{
+                  maxHeight: 350,
+                }}
+              />
+            )}
 
             {/* FOOTER */}
 
-            <View className="mt-5 flex-row items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-800">
-              <Text className="text-sm text-gray-500 dark:text-gray-400">
-                {selectedGroupId ? "1 selected" : "0 selected"}
-              </Text>
+            <View className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+              <View className="mb-4 flex-row items-center justify-between">
+                <Text className="text-sm text-gray-500 dark:text-gray-400">
+                  {selectedGroupId ? "1 selected" : "0 selected"}
+                </Text>
 
-              <View className="flex-row items-center">
-                <TouchableOpacity
-                  onPress={onClose}
-                  className="mr-2 rounded-lg px-4 py-3"
+                <Text className="text-xs text-gray-400">
+                  {groups.length} groups
+                </Text>
+              </View>
+
+              <View className="flex-row items-center justify-between">
+                {/* CANCEL */}
+
+                <Pressable
+                  onPress={handleClose}
+                  disabled={loading}
+                  className="flex-1 items-center rounded-lg border border-gray-300 py-3 dark:border-gray-700"
                 >
-                  <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Cancel
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
 
-                <TouchableOpacity
+                <View className="w-3" />
+
+                {/* CONTINUE */}
+
+                <Pressable
+                  disabled={!selectedGroupId || loading}
                   onPress={handleContinue}
-                  disabled={!selectedGroupId}
-                  className={`rounded-lg px-5 py-3 ${
-                    selectedGroupId
-                      ? "bg-blue-600"
-                      : "bg-gray-200 dark:bg-gray-800"
+                  className={`flex-1 items-center rounded-lg py-3 ${
+                    selectedGroupId && !loading
+                      ? "bg-blue-500"
+                      : "bg-blue-300 dark:bg-blue-900"
                   }`}
                 >
-                  <Text
-                    className={`text-sm font-semibold ${
-                      selectedGroupId ? "text-white" : "text-gray-400"
-                    }`}
-                  >
+                  <Text className="text-sm font-semibold text-white">
                     Continue
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* PLAYLIST ITEM MODAL (group mode) */}
+      {/* PLAYLIST ITEM MODAL */}
 
-     {currentGroupId && (
-  <PlaylistItemModal
-    open={playlistOpen}          // was: visible={playlistOpen}
-    onClose={() => {
-      setPlaylistOpen(false);
-    }}
-    frameId={currentGroupId}
-    pluginId={pluginId}
-    pluginName={pluginName}
-    selectedItem={null}
-    isGroup={true}
-    onSaved={() => {
-      setPlaylistOpen(false);
-      onClose();
-    }}
-  />
-)}
+      {currentGroupId && (
+        <PlaylistItemModal
+          key={currentGroupId}
+          open={playlistOpen}
+          onClose={handlePlaylistClose}
+          frameId={currentGroupId}
+          pluginId={pluginId}
+          pluginName={pluginName}
+          selectedItem={null}
+          isGroup={true}
+          onSaved={() => {
+            setPlaylistOpen(false);
+            setCurrentGroupId(null);
+            setSelectedGroupId(null);
+            onClose();
+          }}
+        />
+      )}
     </>
   );
 }

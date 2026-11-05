@@ -5,13 +5,14 @@ export interface PlaylistItem {
   startTime: string;
   endTime: string;
   priority: number;
-  refreshSeconds: number;
+  refreshSeconds: string | number;
   isEnabled: boolean;
   data?: {
     name?: string;
+    [key: string]: any;
   };
+  config?: Record<string, any>;
 }
-
 export interface PlaylistItemApi
   extends Omit<PlaylistItem, "refreshSeconds"> {
   refreshSeconds: string | number;

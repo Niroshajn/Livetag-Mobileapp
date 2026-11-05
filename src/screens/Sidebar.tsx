@@ -1,18 +1,21 @@
 
-import React, { useCallback, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
 import {
   View,
   TouchableOpacity,
   ScrollView,
   useWindowDimensions,
-  ActivityIndicator,
+  DeviceEventEmitter,
 } from "react-native";
 
 import {
   useNavigation,
   useRoute,
-  useFocusEffect,
 } from "@react-navigation/native";
 
 import {
@@ -31,6 +34,8 @@ import Text from "../components/AppText";
 import { useTheme } from "../context/ThemeContext";
 import LogoutModal from "../modal/Logout";
 import apiClient from "../lib/api";
+
+/* ================= TYPES ================= */
 
 type Props = {
   closeSidebar: () => void;
@@ -63,6 +68,8 @@ type MenuItem = {
   params?: Record<string, any>;
 };
 
+/* ================= SIDEBAR ================= */
+
 export default function Sidebar({ closeSidebar }: Props) {
   const navigation = useNavigation<any>();
   const route = useRoute();
@@ -72,6 +79,7 @@ export default function Sidebar({ closeSidebar }: Props) {
   const iconSize = Math.max(20, Math.min(width * 0.055, 26));
 
   const [showLogout, setShowLogout] = useState(false);
+
   const [groupCount, setGroupCount] = useState<number | null>(null);
 
   const [defaultGroup, setDefaultGroup] = useState<{
@@ -79,17 +87,13 @@ export default function Sidebar({ closeSidebar }: Props) {
     name: string;
   } | null>(null);
 
-  const [loadingGroups, setLoadingGroups] = useState(true);
-
   const isDark = theme === "dark";
-
-  // Icon colors - gray in both themes
   const iconColor = "#6B7280";
+
+  /* ================= FETCH GROUPS ================= */
 
   const fetchGroups = useCallback(async () => {
     try {
-      setLoadingGroups(true);
-
       const res = await apiClient.get<FrameGroupsResponse>(
         "/frame-groups?page=1"
       );
@@ -102,7 +106,7 @@ export default function Sidebar({ closeSidebar }: Props) {
       console.log("Mobile Sidebar groups:", groups);
       console.log("Mobile Sidebar total groups:", totalGroups);
 
-      // Exactly one system-default group
+      // Exactly one system-default group.
       if (
         totalGroups === 1 &&
         groups.length === 1 &&
@@ -117,7 +121,7 @@ export default function Sidebar({ closeSidebar }: Props) {
       } else {
         setDefaultGroup(null);
 
-        console.log("No Default-only state");
+        console.log("Groups menu will be displayed");
       }
     } catch (error: any) {
       console.error(
@@ -127,21 +131,29 @@ export default function Sidebar({ closeSidebar }: Props) {
 
       setGroupCount(0);
       setDefaultGroup(null);
-    } finally {
-      setLoadingGroups(false);
     }
   }, []);
 
-  // Refresh groups when the current screen is focused
-  useFocusEffect(
-    useCallback(() => {
-      fetchGroups();
-    }, [fetchGroups])
-  );
+ 
+  useEffect(() => {
+    // Fetch only when Sidebar mounts.
+    fetchGroups();
 
-  // -----------------------------------------
-  // NAVIGATION
-  // -----------------------------------------
+    // Listen for group create/delete/update events.
+    const subscription = DeviceEventEmitter.addListener(
+      "groupsUpdated",
+      () => {
+        console.log("Groups changed → refreshing mobile sidebar");
+
+        fetchGroups();
+      }
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, [fetchGroups]);
+
 
   const navigateTo = (
     screen: string,
@@ -156,6 +168,8 @@ export default function Sidebar({ closeSidebar }: Props) {
     }
   };
 
+  /* ================= MENU ITEMS ================= */
+
   const menuItems: MenuItem[] = [
     {
       name: "Dashboard",
@@ -163,36 +177,39 @@ export default function Sidebar({ closeSidebar }: Props) {
       route: "Dashboard",
     },
 
-    ...(loadingGroups
+    ...(groupCount === null
       ? []
-      : defaultGroup
-        ? [
-            {
-              name: "Devices",
-              icon: Monitor,
-              route: "Frame",
-              params: {
-                groupId: defaultGroup.id,
-                groupName: defaultGroup.name,
-                groupCount: 1,
-              },
-            },
-          ]
-        : groupCount !== null && groupCount > 0
+      : groupCount === 0
+        ? []
+        : defaultGroup
           ? [
+              {
+                name: "Devices",
+                icon: Monitor,
+                route: "Frame",
+                params: {
+                  groupId: defaultGroup.id,
+                  groupName: defaultGroup.name,
+                  groupCount: 1,
+                },
+              },
+            ]
+          : [
               {
                 name: "Groups",
                 icon: User,
                 route: "Groups",
               },
-            ]
-          : []),
+            ]),
 
     {
       name: "Apps",
       icon: Puzzle,
       route: "Apps",
     },
+
+    // Developer is intentionally hidden on mobile for all roles.
+
     {
       name: "Account",
       icon: User,
@@ -200,9 +217,13 @@ export default function Sidebar({ closeSidebar }: Props) {
     },
   ];
 
+  /* ================= ACTIVE ROUTE ================= */
+
   const isActiveRoute = (item: MenuItem) => {
     return route.name === item.route;
   };
+
+  /* ================= UI ================= */
 
   return (
     <View
@@ -255,10 +276,7 @@ export default function Sidebar({ closeSidebar }: Props) {
                   : "bg-transparent"
               }`}
             >
-              <Icon
-                size={iconSize}
-                color={iconColor}
-              />
+              <Icon size={iconSize} color={iconColor} />
 
               <Text
                 className={`text-base ${
@@ -273,17 +291,6 @@ export default function Sidebar({ closeSidebar }: Props) {
           );
         })}
 
-        {/* LOADING */}
-
-        {loadingGroups && (
-          <View className="items-center py-3">
-            <ActivityIndicator
-              size="small"
-              color={iconColor}
-            />
-          </View>
-        )}
-
         {/* HELP */}
 
         <TouchableOpacity
@@ -295,10 +302,7 @@ export default function Sidebar({ closeSidebar }: Props) {
               : "bg-transparent"
           }`}
         >
-          <HelpCircle
-            size={iconSize}
-            color={iconColor}
-          />
+          <HelpCircle size={iconSize} color={iconColor} />
 
           <Text
             className={`text-base ${
@@ -315,7 +319,6 @@ export default function Sidebar({ closeSidebar }: Props) {
       {/* FOOTER */}
 
       <View className="border-t border-gray-200 p-4 dark:border-gray-800">
-
         {/* THEME */}
 
         <TouchableOpacity
@@ -341,10 +344,7 @@ export default function Sidebar({ closeSidebar }: Props) {
           activeOpacity={0.7}
           className="flex-row items-center gap-3 py-3"
         >
-          <LogOut
-            size={iconSize}
-            color={iconColor}
-          />
+          <LogOut size={iconSize} color={iconColor} />
 
           <Text className="text-base text-gray-600 dark:text-gray-400">
             Logout
