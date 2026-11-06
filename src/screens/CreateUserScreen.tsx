@@ -535,7 +535,7 @@ export default function CreateUserScreen() {
 
                       <Pressable
                         onPress={() =>
-                          navigation.navigate("UserManagement")
+                          navigation.navigate("Dashboard")
                         }
                         disabled={isSubmitting}
                         className="items-center justify-center border border-gray-300 dark:border-gray-700 rounded-lg py-3"
@@ -545,7 +545,6 @@ export default function CreateUserScreen() {
                         </Text>
                       </Pressable>
                     </View>
-
                     {/* Role selection modal */}
                     <Modal
                       visible={showRoleModal}

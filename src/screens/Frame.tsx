@@ -31,7 +31,7 @@ import { useAdmin } from "../context/AdminContext";
 import api from "../lib/api";
 import AppLayout from "./Layout";
 
-import AddDeviceModal from "../modal/AddFramemodal";
+import AddFrameModal from "../modal/AddFramemodal";
 import AddGroupModal from "../modal/AddGroupModal";
 import DeviceSettingsModal from "../modal/DeviceSettingsModal";
 import DeleteModal from "../modal/DeleteModal";
@@ -1057,16 +1057,16 @@ export default function FramesScreen({ navigation, route }: any) {
 
       {/* ADD DEVICE MODAL */}
 
-      <AddDeviceModal
-        visible={showAddPopup}
-        onClose={() => setShowAddPopup(false)}
-        onAdded={() => {
-          fetchFrames();
-          fetchGroups();
-        }}
-        hideGroupSelect={true}
-        groupId={selectedGroupId}
-      />
+ <AddFrameModal
+  visible={showAddPopup}
+  onClose={() => setShowAddPopup(false)}
+  onAdded={async () => {
+    await fetchFrames();
+    await fetchGroups();
+  }}
+  hideGroupSelect={true}
+  groupId={selectedGroupId}
+/>
 
       {/* ADD GROUP MODAL */}
 

@@ -1,4 +1,9 @@
 {
   "name": "LivetagMobileApp",
-  "displayName": "LivetagMobileApp"
+  "displayName": "LivetagMobileApp",
+  "extra": {
+    "eas": {
+      "projectId": "be4bc3e4-4a00-49d4-97ab-5f3122d81f8e"
+    }
+  }
 }

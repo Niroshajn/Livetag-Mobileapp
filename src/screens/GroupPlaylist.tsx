@@ -417,63 +417,91 @@ export default function GroupPlaylistScreen() {
 
   /* ================= PAGINATION ================= */
 
-  const renderPagination = () => {
-    if (!meta || items.length === 0) return null;
+/* ================= PAGINATION ================= */
 
-    return (
-      <View className="mb-3 flex-row items-center justify-between py-5">
-        <TouchableOpacity
-          disabled={!meta.hasPrevious}
-          onPress={() => setPage((prev) => Math.max(prev - 1, 1))}
-          className={`flex-row items-center rounded-lg border px-3 py-2 ${
+const renderPagination = () => {
+  if (!meta || items.length === 0) return null;
+
+  return (
+    <View className="mt-6 mb-5 flex-row items-center justify-between">
+
+      {/* PREVIOUS */}
+
+      <TouchableOpacity
+        activeOpacity={0.7}
+        disabled={!meta.hasPrevious}
+        onPress={() => {
+          setPage((previous) => Math.max(previous - 1, 1));
+        }}
+        className={`
+          rounded-lg
+          border
+          px-4
+          py-2.5
+          ${
             meta.hasPrevious
               ? "border-blue-500"
               : "border-gray-300 dark:border-gray-700"
-          }`}
+          }
+        `}
+      >
+        <Text
+          className={`
+            text-sm font-medium
+            ${
+              meta.hasPrevious
+                ? "text-blue-500"
+                : "text-gray-400"
+            }
+          `}
         >
-          <ChevronLeft
-            size={17}
-            color={meta.hasPrevious ? "#3B82F6" : "#9CA3AF"}
-          />
-
-          <Text
-            className={`ml-1 text-xs ${
-              meta.hasPrevious ? "text-blue-500" : "text-gray-400"
-            }`}
-          >
-            Previous
-          </Text>
-        </TouchableOpacity>
-
-        <Text className="text-xs text-gray-600 dark:text-gray-400">
-          Page {meta.page} of {meta.totalPages}
+          Previous
         </Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity
-          disabled={!meta.hasNext}
-          onPress={() => setPage((prev) => prev + 1)}
-          className={`flex-row items-center rounded-lg border px-3 py-2 ${
+      {/* PAGE NUMBER */}
+
+      <Text className="text-sm text-gray-600 dark:text-gray-400">
+        Page {meta.page} of {meta.totalPages}
+      </Text>
+
+      {/* NEXT */}
+
+      <TouchableOpacity
+        activeOpacity={0.7}
+        disabled={!meta.hasNext}
+        onPress={() => {
+          setPage((previous) => previous + 1);
+        }}
+        className={`
+          rounded-lg
+          border
+          px-4
+          py-2.5
+          ${
             meta.hasNext
               ? "border-blue-500"
               : "border-gray-300 dark:border-gray-700"
-          }`}
+          }
+        `}
+      >
+        <Text
+          className={`
+            text-sm font-medium
+            ${
+              meta.hasNext
+                ? "text-blue-500"
+                : "text-gray-400"
+            }
+          `}
         >
-          <Text
-            className={`mr-1 text-xs ${
-              meta.hasNext ? "text-blue-500" : "text-gray-400"
-            }`}
-          >
-            Next
-          </Text>
+          Next
+        </Text>
+      </TouchableOpacity>
 
-          <ChevronRight
-            size={17}
-            color={meta.hasNext ? "#3B82F6" : "#9CA3AF"}
-          />
-        </TouchableOpacity>
-      </View>
-    );
-  };
+    </View>
+  );
+};
 
   /* ================= LOADING ================= */
 
@@ -487,8 +515,6 @@ export default function GroupPlaylistScreen() {
       </AppLayout>
     );
   }
-
-  /* ================= MAIN UI ================= */
 
   return (
     <AppLayout>
@@ -518,21 +544,20 @@ export default function GroupPlaylistScreen() {
         {items.length === 0 ? (
           <View className="flex-1 items-center justify-center pb-20">
             <Monitor size={40} color="#9CA3AF" />
-
             <Text className="mt-3 text-gray-500">
               No playlist items found
             </Text>
           </View>
         ) : (
-          <FlatList
-            data={items}
-            keyExtractor={(item) => String(item.id)}
-            renderItem={renderItem}
-            showsVerticalScrollIndicator={false}
-            extraData={pluginsMap}
-            contentContainerStyle={{ paddingBottom: 20 }}
-            ListFooterComponent={renderPagination()}
-          />
+         <FlatList
+  data={items}
+  keyExtractor={(item) => String(item.id)}
+  renderItem={renderItem}
+  showsVerticalScrollIndicator={false}
+  extraData={pluginsMap}
+  contentContainerStyle={{ paddingBottom: 20 }}
+  ListFooterComponent={renderPagination}
+/>
         )}
 
         {loading && items.length > 0 && (

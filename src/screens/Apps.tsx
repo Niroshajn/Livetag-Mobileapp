@@ -423,38 +423,88 @@ export default function Apps({ navigation, route }: any) {
         </Text>
 
         {/* Apps grid */}
-        {filteredAndSortedPlugins.length === 0 ? (
-          <View className="flex-1 items-center justify-center">
-            <Puzzle size={38} color="#9CA3AF" />
+      {/* Apps grid */}
+{filteredAndSortedPlugins.length === 0 ? (
+  <View className="flex-1 items-center justify-center">
+    <Puzzle size={38} color="#9CA3AF" />
 
-            <Text className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-              {searchQuery || selectedHashtags.length > 0
-                ? "No apps found"
-                : "No apps yet"}
-            </Text>
+    <Text className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+      {searchQuery || selectedHashtags.length > 0
+        ? "No apps found"
+        : "No apps yet"}
+    </Text>
 
-            <Text className="mt-1 text-center text-xs text-gray-400">
-              Try changing your search or filters.
-            </Text>
-          </View>
-        ) : (
-          <FlatList
-            data={filteredAndSortedPlugins}
-            renderItem={renderItem}
-            keyExtractor={(item) => item.pluginId}
-            numColumns={3}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{
-              paddingTop: 8,
-              paddingBottom: 24,
-            }}
-            columnWrapperStyle={{
-              justifyContent: "flex-start",
-            }}
-          />
-        )}
+    <Text className="mt-1 text-center text-xs text-gray-400">
+      Try changing your search or filters.
+    </Text>
+  </View>
+) : (
+  <>
+    <FlatList
+      data={filteredAndSortedPlugins}
+      renderItem={renderItem}
+      keyExtractor={(item) => item.pluginId}
+      numColumns={3}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{
+        paddingTop: 8,
+        paddingBottom: 16,
+      }}
+      columnWrapperStyle={{
+        justifyContent: "flex-start",
+      }}
+    />
 
+    {/* Pagination */}
+    {meta && meta.totalPages > 1 && (
+      <View className="flex-row items-center justify-between border-t border-gray-200 py-4 dark:border-gray-700">
+
+        {/* Previous */}
+        <TouchableOpacity
+          disabled={!meta.hasPrevious || loading}
+          onPress={() => {
+            setPage((previous) => Math.max(1, previous - 1));
+          }}
+          activeOpacity={0.7}
+          className={`rounded-lg border px-4 py-2 ${
+            !meta.hasPrevious
+              ? "border-gray-200 opacity-40 dark:border-gray-700"
+              : "border-gray-300 dark:border-gray-600"
+          }`}
+        >
+          <Text className="text-sm font-medium text-gray-800 dark:text-white">
+            Previous
+          </Text>
+        </TouchableOpacity>
+
+        {/* Page number */}
+        <Text className="text-sm text-gray-500 dark:text-gray-400">
+          Page {meta.page} of {meta.totalPages}
+        </Text>
+
+        {/* Next */}
+        <TouchableOpacity
+          disabled={!meta.hasNext || loading}
+          onPress={() => {
+            setPage((previous) => previous + 1);
+          }}
+          activeOpacity={0.7}
+          className={`rounded-lg border px-4 py-2 ${
+            !meta.hasNext
+              ? "border-gray-200 opacity-40 dark:border-gray-700"
+              : "border-gray-300 dark:border-gray-600"
+          }`}
+        >
+          <Text className="text-sm font-medium text-gray-800 dark:text-white">
+            Next
+          </Text>
+        </TouchableOpacity>
+
+      </View>
+    )}
+  </>
+)}
       </View>
     </AppLayout>
   );

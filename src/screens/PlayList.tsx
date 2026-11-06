@@ -1,3 +1,4 @@
+
 import React, {
   useCallback,
   useEffect,
@@ -85,12 +86,10 @@ export default function PlaylistScreen() {
   const navigation = useNavigation<any>();
 
   const { width } = useWindowDimensions();
-
   const iconSize = Math.max(16, width * 0.05);
 
   const id = route.params?.id;
 
-  // Optional device information passed from previous screen.
   const modelNo = route.params?.modelNo;
   const displayWidth = route.params?.width;
   const displayHeight = route.params?.height;
@@ -127,6 +126,7 @@ export default function PlaylistScreen() {
     route.params?.deviceName || null
   );
 
+  // Pagination states
   const [page, setPage] = useState(1);
 
   const [meta, setMeta] = useState<PlaylistMeta | null>(null);
@@ -164,17 +164,16 @@ export default function PlaylistScreen() {
           ? res.data.data
           : [];
 
-        // Convert API refreshSeconds to number.
-     const normalizedItems: PlaylistItem[] = list.map(
-  (item) => ({
-    ...item,
-    refreshSeconds: item.refreshSeconds,
-  })
-);
+        const normalizedItems: PlaylistItem[] = list.map(
+          (item) => ({
+            ...item,
+            refreshSeconds: item.refreshSeconds,
+          })
+        );
 
-setItems(normalizedItems);
-
+        setItems(normalizedItems);
         setMeta(res.data?.meta ?? null);
+
       } catch (error: any) {
         console.log(
           "PLAYLIST FETCH ERROR:",
@@ -188,6 +187,7 @@ setItems(normalizedItems);
 
         setItems([]);
         setMeta(null);
+
       } finally {
         setLoading(false);
       }
@@ -204,7 +204,6 @@ setItems(normalizedItems);
 
       const allPlugins: Plugin[] = [];
 
-      // Load all plugin pages.
       while (hasNext) {
         const res = await apiClient.get<PluginResponse>(
           `/plugin/all?page=${currentPage}`
@@ -220,7 +219,6 @@ setItems(normalizedItems);
 
         allPlugins.push(...plugins);
 
-        // Stop if API does not return pagination metadata.
         if (
           Array.isArray(responseData) ||
           !responseData?.meta
@@ -243,6 +241,7 @@ setItems(normalizedItems);
       setPluginsMap(map);
 
       console.log("PLUGINS MAP:", map);
+
     } catch (error: any) {
       console.log(
         "PLUGIN FETCH ERROR:",
@@ -259,11 +258,10 @@ setItems(normalizedItems);
     }
 
     try {
-      const res = await apiClient.get(
-        `/frames/${id}`
-      );
+      const res = await apiClient.get(`/frames/${id}`);
 
       setDeviceName(res.data?.name || null);
+
     } catch (error: any) {
       console.log(
         "DEVICE NAME ERROR:",
@@ -274,6 +272,13 @@ setItems(normalizedItems);
 
   /* ================= EFFECTS ================= */
 
+  // Reset pagination when the selected device changes.
+  useEffect(() => {
+    setPage(1);
+    setMeta(null);
+  }, [id]);
+
+  // Fetch the selected playlist page.
   useEffect(() => {
     fetchPlaylistItems(page);
   }, [fetchPlaylistItems, page]);
@@ -285,6 +290,94 @@ setItems(normalizedItems);
   useEffect(() => {
     fetchDeviceName();
   }, [fetchDeviceName]);
+
+  /* ================= PAGINATION ================= */
+
+  const handlePreviousPage = () => {
+    if (!meta?.hasPrevious) {
+      return;
+    }
+
+    setPage((previous) => Math.max(previous - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    if (!meta?.hasNext) {
+      return;
+    }
+
+    setPage((previous) => previous + 1);
+  };
+
+const renderPagination = () => {
+  if (!meta || items.length === 0) {
+    return null;
+  }
+
+    return (
+      <View className="flex-row justify-between items-center py-4 mt-2">
+
+        {/* PREVIOUS BUTTON */}
+
+        <TouchableOpacity
+          activeOpacity={0.7}
+          disabled={!meta.hasPrevious}
+          onPress={handlePreviousPage}
+          className={`
+            px-4 py-2.5 rounded-lg border
+            ${
+              meta.hasPrevious
+                ? "border-blue-500"
+                : "border-gray-300 dark:border-gray-700"
+            }
+          `}
+        >
+          <Text
+            className={`text-sm font-medium ${
+              meta.hasPrevious
+                ? "text-blue-500"
+                : "text-gray-400"
+            }`}
+          >
+            Previous
+          </Text>
+        </TouchableOpacity>
+
+        {/* CURRENT PAGE */}
+
+        <Text className="text-gray-500 dark:text-gray-400 text-sm">
+          Page {meta.page} of {meta.totalPages}
+        </Text>
+
+        {/* NEXT BUTTON */}
+
+        <TouchableOpacity
+          activeOpacity={0.7}
+          disabled={!meta.hasNext}
+          onPress={handleNextPage}
+          className={`
+            px-4 py-2.5 rounded-lg border
+            ${
+              meta.hasNext
+                ? "border-blue-500"
+                : "border-gray-300 dark:border-gray-700"
+            }
+          `}
+        >
+          <Text
+            className={`text-sm font-medium ${
+              meta.hasNext
+                ? "text-blue-500"
+                : "text-gray-400"
+            }`}
+          >
+            Next
+          </Text>
+        </TouchableOpacity>
+
+      </View>
+    );
+  };
 
   /* ================= ADD ================= */
 
@@ -348,6 +441,7 @@ setItems(normalizedItems);
           height: displayHeight,
         },
       });
+
     } catch (error: any) {
       console.log(
         "OPEN PLAYGROUND ERROR:",
@@ -381,13 +475,14 @@ setItems(normalizedItems);
         "Playlist item deleted successfully."
       );
 
-      // If the last item on this page was deleted,
-      // move to the previous page.
+      // If this was the only item on the current page,
+      // go back to the previous page.
       if (items.length === 1 && page > 1) {
-        setPage((previous) => previous - 1);
+        setPage((previous) => Math.max(previous - 1, 1));
       } else {
         await fetchPlaylistItems(page);
       }
+
     } catch (error: any) {
       console.log(
         "DELETE PLAYLIST ERROR:",
@@ -435,10 +530,13 @@ setItems(normalizedItems);
           rounded-xl p-4 mb-3
         "
       >
+
         {/* TOP SECTION */}
 
         <View className="flex-row justify-between items-center">
+
           <View className="flex-row items-center gap-3 flex-1 mr-3">
+
             {plugin?.pluginLogoUrl ? (
               <Image
                 source={{ uri: plugin.pluginLogoUrl }}
@@ -461,22 +559,25 @@ setItems(normalizedItems);
             )}
 
             <View className="flex-1">
-      <Text
-  bold
-  numberOfLines={1}
-  className="text-gray-900 dark:text-white text-xl"
->
-  {pluginName}
-</Text>
+              <Text
+                bold
+                numberOfLines={1}
+                className="text-gray-900 dark:text-white text-xl"
+              >
+                {pluginName}
+              </Text>
+
               <Text className="text-gray-400 text-md mt-1">
                 {item.startTime} - {item.endTime}
               </Text>
             </View>
+
           </View>
 
           {/* ACTIONS */}
 
           <View className="flex-row items-center gap-3">
+
             <TouchableOpacity
               onPress={() => handleEdit(item)}
               className="
@@ -507,6 +608,7 @@ setItems(normalizedItems);
                 color="#EF4444"
               />
             </TouchableOpacity>
+
           </View>
         </View>
 
@@ -517,6 +619,7 @@ setItems(normalizedItems);
         {/* META */}
 
         <View className="flex-row flex-wrap justify-between gap-y-3">
+
           <View className="flex-row items-center">
             <ArrowUpDown
               size={iconSize}
@@ -534,9 +637,9 @@ setItems(normalizedItems);
               color="#9CA3AF"
             />
 
-           <Text className="text-gray-400 text-xs ml-1">
-  Refresh: {item.refreshSeconds}
-</Text>
+            <Text className="text-gray-400 text-xs ml-1">
+              Refresh: {item.refreshSeconds}
+            </Text>
           </View>
 
           <Text
@@ -548,7 +651,9 @@ setItems(normalizedItems);
           >
             {item.isEnabled ? "Active" : "Inactive"}
           </Text>
+
         </View>
+
       </TouchableOpacity>
     );
   };
@@ -586,7 +691,9 @@ setItems(normalizedItems);
         {/* HEADER */}
 
         <View className="mb-4">
-          <Text bold
+
+          <Text
+            bold
             className="
               text-gray-900 dark:text-white
               text-2xl mt-5
@@ -621,12 +728,15 @@ setItems(normalizedItems);
               Add Item
             </Text>
           </TouchableOpacity>
+
         </View>
 
         {/* PLAYLIST LIST */}
 
         {items.length === 0 ? (
+
           <View className="flex-1 items-center justify-center">
+
             <Monitor
               size={iconSize * 2}
               color="#6B7280"
@@ -658,82 +768,33 @@ setItems(normalizedItems);
                 Add First Item
               </Text>
             </TouchableOpacity>
+
           </View>
+
         ) : (
-          <>
+
+          <View className="flex-1">
+
+            {/* FLATLIST */}
+
             <FlatList
+              style={{ flex: 1 }}
               data={items}
               extraData={pluginsMap}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => String(item.id)}
               renderItem={renderItem}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{
-                paddingBottom: 20,
+                paddingBottom: 10,
               }}
             />
 
             {/* PAGINATION */}
 
-            {meta && meta.totalPages > 1 && (
-              <View className="flex-row justify-between items-center py-3">
-                <TouchableOpacity
-                  disabled={!meta.hasPrevious}
-                  onPress={() =>
-                    setPage((previous) =>
-                      Math.max(previous - 1, 1)
-                    )
-                  }
-                  className={`
-                    px-4 py-2 rounded-lg border
-                    ${
-                      meta.hasPrevious
-                        ? "border-blue-500"
-                        : "border-gray-300 dark:border-gray-700"
-                    }
-                  `}
-                >
-                  <Text
-                    className={
-                      meta.hasPrevious
-                        ? "text-blue-500"
-                        : "text-gray-400"
-                    }
-                  >
-                    Previous
-                  </Text>
-                </TouchableOpacity>
+            {renderPagination()}
 
-                <Text className="text-gray-500 text-sm">
-                  Page {meta.page} of {meta.totalPages}
-                </Text>
+          </View>
 
-                <TouchableOpacity
-                  disabled={!meta.hasNext}
-                  onPress={() =>
-                    setPage((previous) => previous + 1)
-                  }
-                  className={`
-                    px-4 py-2 rounded-lg border
-                    ${
-                      meta.hasNext
-                        ? "border-blue-500"
-                        : "border-gray-300 dark:border-gray-700"
-                    }
-                  `}
-                >
-                  <Text
-                    className={
-                      meta.hasNext
-                        ? "text-blue-500"
-                        : "text-gray-400"
-                    }
-                  >
-                    Next
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </>
         )}
 
         {/* SELECT PLUGIN MODAL */}
@@ -762,19 +823,19 @@ setItems(normalizedItems);
         {/* ADD / EDIT PLAYLIST MODAL */}
 
         {selectedPlugin?.pluginId && id && (
-         <PlaylistItemModal
-  key={selectedItem?.id || "new"}
-  open={openPlaylistModal}
-  onClose={closePlaylistModal}
-  pluginId={String(selectedPlugin.pluginId)}
-  pluginName={selectedPlugin.pluginName}
-  selectedItem={selectedItem}
-  frameId={String(id)}
-  onSaved={async () => {
-    closePlaylistModal();
-    await fetchPlaylistItems(page);
-  }}
-/>
+          <PlaylistItemModal
+            key={selectedItem?.id || "new"}
+            open={openPlaylistModal}
+            onClose={closePlaylistModal}
+            pluginId={String(selectedPlugin.pluginId)}
+            pluginName={selectedPlugin.pluginName}
+            selectedItem={selectedItem}
+            frameId={String(id)}
+            onSaved={async () => {
+              closePlaylistModal();
+              await fetchPlaylistItems(page);
+            }}
+          />
         )}
 
         {/* DELETE MODAL */}

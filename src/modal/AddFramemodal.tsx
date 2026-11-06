@@ -51,7 +51,7 @@ interface ApiResponse<T> {
 interface AddFrameModalProps {
   visible: boolean;
   onClose: () => void;
-  onAdded?: (newFrame: Frame) => void;
+onAdded?: (newFrame?: Frame) => void | Promise<void>;
   hideGroupSelect?: boolean;
   groupId?: string;
   groups?: FrameGroup[];
@@ -210,72 +210,92 @@ export default function AddFrameModal({
 
   /* ================= ADD DEVICE ================= */
 
-  const handleAddDevice = async () => {
-    Keyboard.dismiss();
+const handleAddDevice = async () => {
+  Keyboard.dismiss();
 
-    const trimmedName = name.trim();
-    const friendlyId = code.join("");
+  const trimmedName = name.trim();
+  const friendlyId = code.join("");
 
-    let hasError = false;
+  if (!trimmedName) {
+    setNameError("Device name is required");
+    return;
+  }
 
-    if (!trimmedName) {
-      setNameError("Device name is required");
-      hasError = true;
-    } else {
-      setNameError("");
-    }
+  if (friendlyId.length !== 6) {
+    setCodeError("Friendly ID must be 6 characters");
+    return;
+  }
 
-    if (friendlyId.length !== 6) {
-      setCodeError("Friendly ID must be 6 characters");
-      hasError = true;
-    } else {
-      setCodeError("");
-    }
+  if (!hideGroupSelect && !selectedGroupId) {
+    Alert.alert("Select Group", "Please select a device group.");
+    return;
+  }
 
-    if (hasError) return;
+  try {
+    setLoading(true);
+
+    console.log("========== ADD DEVICE START ==========");
+    console.log("NAME:", trimmedName);
+    console.log("FRIENDLY ID:", friendlyId);
+    console.log("GROUP ID:", selectedGroupId);
+
+    // STEP 1: Call claim API
+    let response;
 
     try {
-      setLoading(true);
+      response = await api.post("/frames/claim", {
+        name: trimmedName,
+        friendlyId,
+        groupId: selectedGroupId,
+      });
 
-      const response = await api.post<ApiResponse<Frame>>(
-        "/frames/claim",
-        {
-          name: trimmedName,
-          friendlyId,
-          groupId: selectedGroupId,
-        }
+      console.log("CLAIM API STATUS:", response.status);
+      console.log(
+        "CLAIM API RESPONSE:",
+        JSON.stringify(response.data, null, 2)
+      );
+    } catch (apiError: any) {
+      console.log("========== CLAIM API FAILED ==========");
+      console.log("STATUS:", apiError?.response?.status);
+      console.log(
+        "SERVER RESPONSE:",
+        JSON.stringify(apiError?.response?.data, null, 2)
+      );
+      console.log("ERROR MESSAGE:", apiError?.message);
+
+      Alert.alert(
+        "Claim API Error",
+        apiError?.response?.data?.message ||
+          apiError?.message ||
+          "Unable to claim device."
       );
 
-      const newFrame = response.data?.data;
+      return;
+    }
 
-      if (!newFrame) {
-        throw new Error("Invalid response from server");
-      }
-
-      onAdded?.(newFrame);
-
+    // STEP 2: A successful HTTP response means the claim succeeded.
+    if (response.status >= 200 && response.status < 300) {
+      Keyboard.dismiss();
       onClose();
 
-      Alert.alert(
-        "Success",
-        "Device added successfully."
-      );
-    } catch (error: any) {
-      console.log(
-        "ADD FRAME ERROR:",
-        error?.response?.data ?? error
-      );
+      Alert.alert("Success", "Device added successfully.");
 
-      Alert.alert(
-        "Error",
-        error?.response?.data?.message ||
-          error?.message ||
-          "Failed to add device."
-      );
-    } finally {
-      setLoading(false);
+      // STEP 3: Refresh separately.
+      try {
+        await onAdded?.();
+        console.log("DEVICE LIST REFRESH SUCCESS");
+      } catch (refreshError: any) {
+        console.log("DEVICE REFRESH FAILED:", refreshError);
+        Alert.alert(
+          "Device Added",
+          "Device was added, but refreshing the device list failed. Please refresh manually."
+        );
+      }
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   /* ================= UI ================= */
 
@@ -287,13 +307,13 @@ export default function AddFrameModal({
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={
-          Platform.OS === "ios" ? "padding" : "height"
-        }
-        keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
-      >
+       <KeyboardAvoidingView
+              style={{ flex: 1 }}
+              behavior={
+                Platform.OS === "ios" ? "padding" : "height"
+              }
+              keyboardVerticalOffset={0}
+            >
         <View className="flex-1 justify-center items-center px-4">
 
           {/* BACKGROUND OVERLAY */}

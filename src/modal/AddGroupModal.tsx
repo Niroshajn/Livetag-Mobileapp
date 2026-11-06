@@ -12,7 +12,6 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
-  TouchableWithoutFeedback,
 } from "react-native";
 
 import Text from "../components/AppText";
@@ -75,6 +74,8 @@ export default function AddGroupModal({
   };
 
   const handleSubmit = async () => {
+    Keyboard.dismiss();
+
     if (!validateForm()) return;
 
     try {
@@ -100,8 +101,6 @@ export default function AddGroupModal({
         Alert.alert("Success", "Group created successfully");
       }
 
-      Keyboard.dismiss();
-
       await onCreated();
 
       setGroupName("");
@@ -126,146 +125,163 @@ export default function AddGroupModal({
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={() => {
+        Keyboard.dismiss();
+        onClose();
+      }}
       statusBarTranslucent
       presentationStyle="overFullScreen"
     >
       <View className="flex-1 bg-black/60">
 
+        {/* Keyboard handling */}
         <KeyboardAvoidingView
-          className="flex-1"
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+          behavior={
+            Platform.OS === "ios" ? "padding" : "height"
+          }
           keyboardVerticalOffset={0}
         >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View className="flex-1 justify-center px-5">
 
-              <ScrollView
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode={
-                  Platform.OS === "ios" ? "interactive" : "on-drag"
-                }
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{
-                  flexGrow: 1,
-                  justifyContent: "center",
-                  paddingVertical: 20,
-                }}
-              >
-                <TouchableWithoutFeedback onPress={() => {}}>
-                  <View className="bg-white dark:bg-[#171717] rounded-2xl p-5">
+          {/* Scrollable modal */}
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{
+              flexGrow: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              paddingHorizontal: 20,
+              paddingVertical: 24,
+            }}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={
+              Platform.OS === "ios" ? "interactive" : "on-drag"
+            }
+            showsVerticalScrollIndicator={false}
+          >
 
-                    {/* Header */}
-                    <View className="flex-row items-center mb-6">
-                      <View className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 items-center justify-center mr-3">
-                        <Text className="text-xl">📁</Text>
-                      </View>
+            {/* Modal card */}
+            <View className="w-full max-w-[520px] rounded-2xl bg-white p-5 dark:bg-[#171717]">
 
-                      <View className="flex-1">
-                        <Text className="text-xl font-bold text-gray-900 dark:text-white">
-                          {isEdit ? "Edit Group" : "Add Group"}
-                        </Text>
+              {/* Header */}
+              <View className="mb-6 flex-row items-center">
 
-                        <Text className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          {isEdit
-                            ? "Update group details"
-                            : "Create a new device group"}
-                        </Text>
-                      </View>
-                    </View>
+                <View className="mr-3 h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                  <Text className="text-xl">📁</Text>
+                </View>
 
-                    {/* Group Name */}
-                    <View className="mb-4">
-                      <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Group Name
-                      </Text>
+                <View className="flex-1">
+                  <Text className="text-xl font-bold text-gray-900 dark:text-white">
+                    {isEdit ? "Edit Group" : "Add Group"}
+                  </Text>
 
-                      <TextInput
-                        value={groupName}
-                        onChangeText={(value) => {
-                          setGroupName(value);
-                          if (value.trim()) setNameError("");
-                        }}
-                        placeholder="Enter group name"
-                        placeholderTextColor="#9CA3AF"
-                        editable={!isSubmitting}
-                        returnKeyType="next"
-                        blurOnSubmit={false}
-                        className="border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#252525] text-gray-900 dark:text-white rounded-lg px-3 py-3"
-                      />
+                  <Text className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    {isEdit
+                      ? "Update group details"
+                      : "Create a new device group"}
+                  </Text>
+                </View>
 
-                      {!!nameError && (
-                        <Text className="text-red-500 text-xs mt-1">
-                          {nameError}
-                        </Text>
-                      )}
-                    </View>
+              </View>
 
-                    {/* Description */}
-                    <View className="mb-5">
-                      <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Description
-                      </Text>
+              {/* Group Name */}
+              <View className="mb-4">
 
-                      <TextInput
-                        value={description}
-                        onChangeText={(value) => {
-                          setDescription(value);
-                          if (value.trim()) setDescriptionError("");
-                        }}
-                        placeholder="Enter description"
-                        placeholderTextColor="#9CA3AF"
-                        multiline
-                        numberOfLines={4}
-                        textAlignVertical="top"
-                        editable={!isSubmitting}
-                        returnKeyType="default"
-                        className="border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#252525] text-gray-900 dark:text-white rounded-lg px-3 py-3 min-h-[100px]"
-                      />
+                <Text className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Group Name
+                </Text>
 
-                      {!!descriptionError && (
-                        <Text className="text-red-500 text-xs mt-1">
-                          {descriptionError}
-                        </Text>
-                      )}
-                    </View>
+                <TextInput
+                  value={groupName}
+                  onChangeText={(value) => {
+                    setGroupName(value);
+                    if (value.trim()) setNameError("");
+                  }}
+                  placeholder="Enter group name"
+                  placeholderTextColor="#9CA3AF"
+                  editable={!isSubmitting}
+                  returnKeyType="next"
+                  blurOnSubmit={false}
+                  className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-gray-900 dark:border-gray-700 dark:bg-[#252525] dark:text-white"
+                />
 
-                    {/* Buttons */}
-                    <View className="flex-row gap-3 border-t border-gray-100 dark:border-gray-800 pt-4">
+                {!!nameError && (
+                  <Text className="mt-1 text-xs text-red-500">
+                    {nameError}
+                  </Text>
+                )}
 
-                      <Pressable
-                        onPress={onClose}
-                        disabled={isSubmitting}
-                        className="flex-1 items-center justify-center rounded-lg py-3 bg-gray-100 dark:bg-[#303030]"
-                      >
-                        <Text className="font-semibold text-gray-700 dark:text-gray-200">
-                          Cancel
-                        </Text>
-                      </Pressable>
+              </View>
 
-                      <Pressable
-                        onPress={handleSubmit}
-                        disabled={isSubmitting}
-                        className={`flex-1 items-center justify-center rounded-lg py-3 ${
-                          isSubmitting ? "bg-blue-400" : "bg-blue-600"
-                        }`}
-                      >
-                        {isSubmitting ? (
-                          <ActivityIndicator color="#FFFFFF" />
-                        ) : (
-                          <Text className="font-semibold text-white">
-                            {isEdit ? "Update" : "Save"}
-                          </Text>
-                        )}
-                      </Pressable>
+              {/* Description */}
+              <View className="mb-5">
 
-                    </View>
-                  </View>
-                </TouchableWithoutFeedback>
-              </ScrollView>
+                <Text className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Description
+                </Text>
+
+                <TextInput
+                  value={description}
+                  onChangeText={(value) => {
+                    setDescription(value);
+                    if (value.trim()) setDescriptionError("");
+                  }}
+                  placeholder="Enter description"
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  editable={!isSubmitting}
+                  returnKeyType="default"
+                  className="min-h-[120px] rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-gray-900 dark:border-gray-700 dark:bg-[#252525] dark:text-white"
+                />
+
+                {!!descriptionError && (
+                  <Text className="mt-1 text-xs text-red-500">
+                    {descriptionError}
+                  </Text>
+                )}
+
+              </View>
+
+              {/* Buttons */}
+              <View className="flex-row gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+
+                <Pressable
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    onClose();
+                  }}
+                  disabled={isSubmitting}
+                  className="flex-1 items-center justify-center rounded-lg bg-gray-100 py-3 dark:bg-[#303030]"
+                >
+                  <Text className="font-semibold text-gray-700 dark:text-gray-200">
+                    Cancel
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={handleSubmit}
+                  disabled={isSubmitting}
+                  className={`flex-1 items-center justify-center rounded-lg py-3 ${
+                    isSubmitting ? "bg-blue-400" : "bg-blue-600"
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text className="font-semibold text-white">
+                      {isEdit ? "Update" : "Save"}
+                    </Text>
+                  )}
+                </Pressable>
+
+              </View>
 
             </View>
-          </TouchableWithoutFeedback>
+
+          </ScrollView>
+
         </KeyboardAvoidingView>
       </View>
     </Modal>

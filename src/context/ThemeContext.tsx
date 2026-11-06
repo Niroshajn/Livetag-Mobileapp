@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -5,7 +6,12 @@ import React, {
   useState,
   ReactNode,
 } from "react";
-import { Appearance } from "react-native";
+import SystemNavigationBar from "react-native-system-navigation-bar";
+import {
+  Appearance,
+  StatusBar,
+} from "react-native";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from "nativewind";
 
@@ -17,7 +23,9 @@ interface ThemeContextType {
   setTheme: (theme: Theme) => void;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextType | undefined>(
+  undefined
+);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { colorScheme, toggleColorScheme } = useColorScheme();
@@ -25,7 +33,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("light");
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // ✅ Load theme
+  // Load saved theme
   useEffect(() => {
     const loadTheme = async () => {
       try {
@@ -36,6 +44,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         } else {
           const systemTheme =
             Appearance.getColorScheme() === "dark" ? "dark" : "light";
+
           setThemeState(systemTheme);
         }
       } catch (error) {
@@ -47,20 +56,41 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     loadTheme();
   }, []);
+// Sync Android bottom navigation bar with app theme
+useEffect(() => {
+  const updateNavigationBar = async () => {
+    try {
+      await SystemNavigationBar.setBarColor(
+        theme === "dark" ? "#0B0B0B" : "#FFFFFF",
+        {
+          bar: "navigation",
+          style: theme === "dark" ? "light" : "dark",
+        }
+      );
+    } catch (error) {
+      console.log("Navigation bar theme error:", error);
+    }
+  };
 
-  // ✅ Sync with NativeWind (FIXED)
+  if (isLoaded) {
+    updateNavigationBar();
+  }
+}, [theme, isLoaded]);
+  // Sync NativeWind and save theme
   useEffect(() => {
     if (!isLoaded) return;
 
     if (theme !== colorScheme) {
-      toggleColorScheme(); // 🔥 correct for your version
+      toggleColorScheme();
     }
 
     AsyncStorage.setItem("theme", theme);
-  }, [theme, isLoaded]);
+  }, [theme, isLoaded, colorScheme, toggleColorScheme]);
 
   const toggleTheme = () => {
-    setThemeState((prev) => (prev === "dark" ? "light" : "dark"));
+    setThemeState((prev) =>
+      prev === "dark" ? "light" : "dark"
+    );
   };
 
   const setTheme = (newTheme: Theme) => {
@@ -70,17 +100,34 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   if (!isLoaded) return null;
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
-      {children}
+    <ThemeContext.Provider
+      value={{ theme, toggleTheme, setTheme }}
+    >
+      <>
+        <StatusBar
+          animated
+          hidden={false}
+          translucent={false}
+          backgroundColor={theme === "dark" ? "#0B0B0B" : "#FFFFFF"}
+          barStyle={
+            theme === "dark"
+              ? "light-content"
+              : "dark-content"
+          }
+        />
+
+        {children}
+      </>
     </ThemeContext.Provider>
   );
 }
 
-// ✅ Hook
 export function useTheme() {
   const context = useContext(ThemeContext);
+
   if (!context) {
     throw new Error("useTheme must be used within ThemeProvider");
   }
+
   return context;
 }
